@@ -36,7 +36,9 @@
 }
 
 
-
+.custom-swiper .swiper-pagination {
+  bottom: -10px !important; /* move dots slightly below the image */
+}
 
 
 
