@@ -1,110 +1,65 @@
-import { Swiper, SwiperSlide } from "swiper/react";
-import { Autoplay, Pagination } from "swiper/modules";
-import "swiper/css";
-import "swiper/css/pagination";
+import { useState } from "react";
 
 const Banner = () => {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]); // to be filled from backend later
+
+  const handleSearch = () => {
+    // For now, we'll mock the result
+    const mockResults = [
+      { id: 1, title: "How to improve mental health", tags: ["health", "wellbeing"] },
+      { id: 2, title: "Youth in social development", tags: ["youth", "social"] },
+    ];
+    const filtered = mockResults.filter(post =>
+      post.tags.includes(searchQuery.toLowerCase())
+    );
+    setSearchResults(filtered);
+  };
+
   return (
-    <div className="w-full px-4 py-8 md:px-6 md:py-10 lg:max-w-7xl lg:mx-auto">
-      
-      
-      <Swiper
-        modules={[Autoplay, ]}
-        spaceBetween={30}
-        slidesPerView={1}
-        autoplay={{ delay: 4000, disableOnInteraction: false }}
-        // pagination={{ clickable: true }}
-        loop={true}
-        className="rounded-lg shadow-lg h-[300px] sm:h-[350px] md:h-[400px] "
-      >
+    <section className="bg-blue-100 py-10 px-4 md:px-10">
+      <div className="max-w-7xl mx-auto text-center space-y-4">
+        <h1 className="text-3xl md:text-5xl font-bold text-blue-900">Welcome to Forumify</h1>
+        <p className="text-lg md:text-xl text-blue-800">
+          Connect, Share, and Grow with meaningful conversations.
+        </p>
 
-        {/* Slide 1 */}
-        <SwiperSlide>
-          <div className="w-full h-full flex flex-col md:flex-row bg-gray-50">
-            <div className="w-full p-6 md:w-1/2 flex flex-col justify-center">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4">
-                Welcome to Forumify
-              </h2>
-              <p className="text-sm sm:text-base md:text-lg mb-6">
-                Connect. Share. Grow with meaningful conversations.
-              </p>
-              <button
-                onClick={() => window.location.href = "/discussions"}
-                className="self-start px-6 py-2 rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700"
+        {/* Search Bar */}
+        <div className="mt-6 flex flex-col md:flex-row justify-center items-center gap-4">
+          <input
+            type="text"
+            placeholder="Search by tag (e.g. health, youth)..."
+            className="w-full md:w-96 px-4 py-2 rounded-md border border-blue-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          <button
+            onClick={handleSearch}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md font-medium"
+          >
+            Search
+          </button>
+        </div>
+      </div>
+
+      {/* Search Results */}
+      {searchResults.length > 0 && (
+        <div className="max-w-4xl mx-auto mt-10">
+          <h2 className="text-xl font-semibold mb-4 text-blue-900">Search Results:</h2>
+          <ul className="space-y-4">
+            {searchResults.map((post) => (
+              <li
+                key={post.id}
+                className="p-4 border border-gray-200 rounded-lg shadow-md bg-white"
               >
-                Browse Discussions
-              </button>
-            </div>
-            <div className="w-full md:w-1/2 h-[200px] md:h-full p-4">
-              <img
-                src="https://images.unsplash.com/photo-1635070041078-e363dbe005cb?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
-                alt="Welcome to Forumify"
-                className="w-full h-full object-cover rounded-lg"
-                loading="lazy"
-              />
-            </div>
-          </div>
-        </SwiperSlide>
-
-        {/* Slide 2 */}
-        <SwiperSlide>
-          <div className="w-full h-full flex flex-col md:flex-row bg-gray-50">
-            <div className="w-full p-6 md:w-1/2 flex flex-col justify-center">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4">
-                Be a Contributor
-              </h2>
-              <p className="text-sm sm:text-base md:text-lg mb-6">
-                Post your thoughts and inspire others to engage.
-              </p>
-              <button
-                onClick={() => window.location.href = "/create-post"}
-                className="self-start px-6 py-2 rounded-lg font-medium bg-white text-blue-600 border border-blue-600 hover:bg-blue-50"
-              >
-                Create First Post
-              </button>
-            </div>
-            <div className="w-full md:w-1/2 h-[200px] md:h-full p-4">
-              <img
-                src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
-                alt="Be a Contributor"
-                className="w-full h-full object-cover rounded-lg"
-                loading="lazy"
-              />
-            </div>
-          </div>
-        </SwiperSlide>
-
-        {/* Slide 3 */}
-        <SwiperSlide>
-          <div className="w-full h-full flex flex-col md:flex-row bg-gray-50">
-            <div className="w-full p-6 md:w-1/2 flex flex-col justify-center">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4">
-                Join the Movement
-              </h2>
-              <p className="text-sm sm:text-base md:text-lg mb-6">
-                Unlock exclusive features by becoming a member.
-              </p>
-              <button
-                onClick={() => window.location.href = "/membership"}
-                className="self-start px-6 py-2 rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700"
-              >
-                Upgrade Now
-              </button>
-            </div>
-            <div className="w-full md:w-1/2 h-[200px] md:h-full p-4">
-              <img
-                src="https://images.unsplash.com/photo-1579389083078-4e7018379f7e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
-                alt="Join the Movement"
-                className="w-full h-full object-cover rounded-lg"
-                loading="lazy"
-              />
-            </div>
-          </div>
-        </SwiperSlide>
-
-      </Swiper>
-      
-    </div>
+                <h3 className="text-lg font-bold text-blue-800">{post.title}</h3>
+                <p className="text-sm text-gray-600">Tags: {post.tags.join(", ")}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </section>
   );
 };
 
