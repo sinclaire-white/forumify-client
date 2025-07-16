@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router"; 
+import { Link, useNavigate } from "react-router";
 import { useForm } from "react-hook-form";
 import useAuth from "../../hooks/useAuth";
 import Swal from "sweetalert2";
@@ -15,7 +15,14 @@ const Register = () => {
     handleSubmit,
     formState: { errors },
     reset,
-  } = useForm();
+  } = useForm({
+    defaultValues: { 
+      name: '',
+      email: '',
+      password: '',
+      photoURL: '',
+    }
+  });
 
   const onSubmit = async (data) => {
     try {
@@ -30,37 +37,35 @@ const Register = () => {
         photoURL,
       });
 
-      // 3. Save user to database
+      // 3. Save user to database - CHECK PUBLIC ENDPOINT
       const newUser = {
         name: name,
         email: res.user.email,
         photo: photoURL,
-        role: "user", // Assign bronze badge on registration
+        role: "user",
         badge: "bronze",
       };
 
-      // Check if user already exists in your DB before saving
-      // This is important for social logins where a user might sign in multiple times
-      // For email/password, Firebase won't create a duplicate, but the DB check is good for robustness.
-      const existingUser = await axios.get(`/users?email=${res.user.email}`);
-      if (existingUser.data.length === 0) {
-        await axios.post("/users", newUser);
-      } else {
-        // Optionally update existing user's Firebase details in your DB if needed
-        
-        await axios.patch(`/users/${existingUser.data[0]._id}`, { 
-            name: name,
-            photo: photoURL,
-            badge: "bronze" // Ensure badge is bronze on re-login/re-register
-        });
-      }
+      const checkUserResponse = await axios.get(`/users/check-email?email=${res.user.email}`);
 
+      if (checkUserResponse.data.exists) {
+        // User exists, update their profile (e.g., photo, name, badge)
+        
+        await axios.patch(`/users/${checkUserResponse.data.user._id}`, {
+          name: name,
+          photo: photoURL,
+          badge: "bronze" // Ensure badge is bronze
+        });
+      } else {
+        // User does not exist, create new
+        await axios.post("/users", newUser);
+      }
 
       // 4. Get Firebase ID token
       const idToken = await res.user.getIdToken();
 
       // 5. Send token to backend to get JWT
-       const jwtRes = await axios.post("/jwt", { token: idToken }); 
+      const jwtRes = await axios.post("/jwt", { token: idToken }); // Corrected to 'token'
 
       // 6. Save JWT in localStorage
       localStorage.setItem("access-token", jwtRes.data.token);
@@ -69,8 +74,7 @@ const Register = () => {
       reset();
       navigate("/");
     } catch (err) {
-      console.error("Registration Error:", err); // Log the full error for debugging
-      // Firebase specific error handling
+      console.error("Registration Error:", err);
       let errorMessage = "Registration failed!";
       if (err.code === 'auth/email-already-in-use') {
         errorMessage = "This email is already in use.";
@@ -85,8 +89,8 @@ const Register = () => {
     try {
       const result = await signInWithGoogle();
 
-      const name = result.user.displayName || "Google User"; // fallback if name is missing
-      const photoURL = result.user.photoURL || "https://via.placeholder.com/150"; // Fallback photo URL
+      const name = result.user.displayName || "Google User";
+      const photoURL = result.user.photoURL || "https://via.placeholder.com/150";
 
       const newUser = {
         name: name,
@@ -96,29 +100,29 @@ const Register = () => {
         badge: "bronze",
       };
 
-      // Check if user already exists in your DB to avoid duplicates on social login
-      const existingUser = await axios.get(`/users?email=${result.user.email}`);
-      if (existingUser.data.length === 0) {
-        await axios.post("/users", newUser);
-      } else {
-        // If user exists, just update their info if needed, ensure badge
-        await axios.patch(`/users/${existingUser.data[0]._id}`, {
-            name: name,
-            photo: photoURL,
-            badge: "bronze"
+      // Check if user already exists in your DB using the public endpoint
+      const checkUserResponse = await axios.get(`/users/check-email?email=${result.user.email}`);
+      if (checkUserResponse.data.exists) {
+        // If user exists, update their details
+        await axios.patch(`/users/${checkUserResponse.data.user._id}`, {
+          name: name,
+          photo: photoURL,
+          badge: "bronze"
         });
+      } else {
+        // If user doesn't exist, create a new one
+        await axios.post("/users", newUser);
       }
 
-
       const idToken = await result.user.getIdToken();
-       const jwtRes = await axios.post("/jwt", { token: idToken });
+      const jwtRes = await axios.post("/jwt", { token: idToken }); // Corrected to 'token'
 
       localStorage.setItem("access-token", jwtRes.data.token);
 
-      Swal.fire("Success!", "Logged in with Google!", "success"); // Success message for social login
+      Swal.fire("Success!", "Logged in with Google!", "success");
       navigate("/");
     } catch (err) {
-      console.error("Google Login Error:", err); // Log the full error for debugging
+      console.error("Google Login Error:", err);
       let errorMessage = "Google login failed!";
       if (err.message) {
         errorMessage = err.message;
@@ -134,9 +138,8 @@ const Register = () => {
           <h2 className="mb-4 text-2xl font-bold text-center">
             Register to Forumify
           </h2>
-          {/* form */}
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6"> {/* Increased space-y for better separation */}
-            {/* Full Name Field (already correct) */}
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            {/* Full Name Field */}
             <div className="relative w-full">
               <input
                 type="text"
@@ -163,13 +166,13 @@ const Register = () => {
             <div className="relative w-full">
               <input
                 type="email"
-                id="email" // Must have a unique ID for htmlFor
+                id="email"
                 placeholder=" "
                 className="w-full placeholder-transparent transition-all duration-200 ease-in-out peer input input-bordered focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
                 {...register("email", { required: "Email is required" })}
               />
               <label
-                htmlFor="email" // Link to input's ID
+                htmlFor="email"
                 className="absolute left-3 -top-2.5 px-1 text-sm text-gray-500
                 transition-all z-10 bg-base-100
                 peer-placeholder-shown:top-3 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400
@@ -186,7 +189,7 @@ const Register = () => {
             <div className="relative w-full">
               <input
                 type="password"
-                id="password" // Must have a unique ID for htmlFor
+                id="password"
                 placeholder=" "
                 className="w-full placeholder-transparent transition-all duration-200 ease-in-out peer input input-bordered focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
                 {...register("password", {
@@ -202,7 +205,7 @@ const Register = () => {
                 })}
               />
               <label
-                htmlFor="password" // Link to input's ID
+                htmlFor="password"
                 className="absolute left-3 -top-2.5 px-1 text-sm text-gray-500
                 transition-all z-10 bg-base-100
                 peer-placeholder-shown:top-3 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400
@@ -219,7 +222,7 @@ const Register = () => {
             <div className="relative w-full">
               <input
                 type="text"
-                id="photoURL" // Must have a unique ID for htmlFor
+                id="photoURL"
                 placeholder=" "
                 className="w-full placeholder-transparent transition-all duration-200 ease-in-out peer input input-bordered focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
                 {...register("photoURL", {
@@ -230,20 +233,20 @@ const Register = () => {
                 })}
               />
               <label
-                htmlFor="photoURL" // Link to input's ID
+                htmlFor="photoURL"
                 className="absolute left-3 -top-2.5 px-1 text-sm text-gray-500
                 transition-all z-10 bg-base-100
                 peer-placeholder-shown:top-3 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400
                 peer-focus:-top-2.5 peer-focus:text-sm peer-focus:text-primary"
               >
-                Photo URL
+                Photo URL (Optional)
               </label>
             </div>
             {errors.photoURL && (
               <p className="mt-1 text-sm text-red-500">{errors.photoURL.message}</p>
             )}
 
-            <button type="submit" className="w-full mt-3 btn btn-primary"> {/* Adjusted margin-top for button */}
+            <button type="submit" className="w-full mt-6 btn btn-primary">
               Register
             </button>
           </form>
@@ -258,7 +261,7 @@ const Register = () => {
 
           <p className="mt-2 text-sm text-center">
             Already have an account?{" "}
-            <Link to="/login" className="text-primary hover:underline"> {/* Added hover underline */}
+            <Link to="/login" className="text-primary hover:underline">
               Login
             </Link>
           </p>
