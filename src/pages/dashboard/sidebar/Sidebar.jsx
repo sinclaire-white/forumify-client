@@ -1,11 +1,9 @@
+import AdminSidebar from "./AdminSidebar";
+import UserSidebar from "./UserSidebar";
 
-
-const Sidebar = () => {
-    return (
-        <div>
-            <p>this is Sidebar</p>
-        </div>
-    );
+const Sidebar = ({ role }) => {
+  if (role === "admin") return <AdminSidebar></AdminSidebar>;
+  return <UserSidebar></UserSidebar>;
 };
 
 export default Sidebar;

@@ -7,6 +7,7 @@ import {
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
+  updateProfile,
 } from "firebase/auth";
 import { auth } from "../firebase/firebase.init";
 
@@ -49,11 +50,24 @@ const AuthProvider = ({ children }) => {
   const logOut = () => {
     return signOut(auth);
   };
+
+  //function to update user profile info
+  const updateUserProfile = (name, photoURL) => {
+    if (!auth.currentUser)
+      return Promise.reject(new Error("No user logged in"));
+
+    return updateProfile(auth.currentUser, {
+      displayName: name,
+      photoURL: photoURL || "",
+    });
+  };
+
   const userInfo = {
     user,
     createUser,
     loginUser,
     signInWithGoogle,
+    updateUserProfile, 
     loading,
     logOut,
   };
