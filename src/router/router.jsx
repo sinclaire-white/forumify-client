@@ -14,6 +14,7 @@ import ManageUsers from "../pages/dashboard/admin/ManageUsers";
 import MakeAnnounce from "../pages/dashboard/admin/MakeAnnounce";
 import ReportedActivity from "../pages/dashboard/admin/ReportedActivity";
 import Membership from "../pages/membership/Membership";
+import SinglePostPage from "../pages/home/SinglePost";
 
 export const router = createBrowserRouter([
   {
@@ -27,6 +28,10 @@ export const router = createBrowserRouter([
       {
         path:'/membership',
         element: <PrivateRoute><Membership></Membership></PrivateRoute>
+      },
+      {
+        path: '/post/:id',
+        element: <PrivateRoute><SinglePostPage></SinglePostPage></PrivateRoute>
       }
     ],
   },
