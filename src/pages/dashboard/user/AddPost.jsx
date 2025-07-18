@@ -41,9 +41,12 @@ const AddPost = () => {
     { value: "technology", label: "Technology" },
     { value: "health", label: "Health" },
     { value: "science", label: "Science" },
-    { value: "finance", label: "Finance" }, // Added a few more for variety
+    { value: "finance", label: "Finance" }, 
     { value: "travel", label: "Travel" },
     { value: "art", label: "Art" },
+    { value: "work", label: "Work" },
+    { value: "sports", label: "Sports" },
+      { value: "news", label: "News" },
   ];
 
   useEffect(() => {
