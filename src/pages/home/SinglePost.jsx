@@ -9,7 +9,7 @@ import {
   WhatsappShareButton,
   FacebookIcon,
   WhatsappIcon,
-} from "react-share"; // Import react-share components
+} from "react-share"; 
 
 const SinglePostPage = () => {
   const { id } = useParams();
