@@ -17,24 +17,25 @@ const MyPost = () => {
 
   // Function to fetch posts, called on mount and after deletion
   const fetchMyPosts = async () => {
-    if (!user?.email) {
-      setLoading(false);
-      return;
-    }
-    try {
-      setLoading(true);
-      setError(null);
-      // Fetches all posts by the logged-in user from the /my-posts endpoint
-      const res = await axiosSecure.get(`/my-posts?email=${user.email}`);
-      setMyPosts(res.data);
-    } catch (err) {
-      console.error("Error fetching my posts:", err);
-      setError("Failed to load your posts. Please try again.");
-      setMyPosts([]); // Clear posts on error
-    } finally {
-      setLoading(false);
-    }
-  };
+  if (!user?.email) {
+    setLoading(false);
+    return;
+  }
+  try {
+    setLoading(true);
+    setError(null);
+    const res = await axiosSecure.get(`/my-posts?email=${user.email}`);
+    setMyPosts(res.data);
+   
+    
+  } catch (err) {
+    console.error("Error fetching my posts:", err);
+    setError("Failed to load your posts. Please try again.");
+    setMyPosts([]); // Clear posts on error
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     if (!authLoading) { // Fetch posts once user authentication is resolved

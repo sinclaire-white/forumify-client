@@ -15,6 +15,7 @@ import MakeAnnounce from "../pages/dashboard/admin/MakeAnnounce";
 import ReportedActivity from "../pages/dashboard/admin/ReportedActivity";
 import Membership from "../pages/membership/Membership";
 import SinglePostPage from "../pages/home/SinglePost";
+import CommentsPage from "../pages/dashboard/user/CommentsPage";
 
 export const router = createBrowserRouter([
   {
@@ -74,6 +75,10 @@ export const router = createBrowserRouter([
       {
         path: "my-posts",
         Component: Mypost,
+      },
+      {
+        path: "comments/:postId",
+        Component: CommentsPage
       },
 
       // ADMIN DASHBOARD
