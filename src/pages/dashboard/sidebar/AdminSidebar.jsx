@@ -1,6 +1,6 @@
-import { NavLink } from "react-router";
+import { NavLink } from "react-router"; 
 import { FiUser, FiUsers, FiAlertCircle } from "react-icons/fi";
-import { MdCampaign } from "react-icons/md"; // ✅ Replaced FiSpeakerphone
+import { MdCampaign } from "react-icons/md";
 
 const AdminSidebar = () => {
   const linkClass = ({ isActive }) =>
@@ -23,7 +23,7 @@ const AdminSidebar = () => {
         Reported Comments
       </NavLink>
       <NavLink to="/dashboard/make-announcement" className={linkClass}>
-        <MdCampaign /> {/* ✅ Replaced FiSpeakerphone */}
+        <MdCampaign />
         Make Announcement
       </NavLink>
     </nav>

@@ -169,7 +169,8 @@ const CommentsPage = () => {
       ) : (
         <Fade delay={200} triggerOnce>
           <div className="overflow-x-auto border border-gray-200 rounded-lg shadow-xl">
-            <table className="table table-zebra w-full min-w-[700px]"> {/* min-width for better mobile experience */}
+            <table className="table table-zebra w-full min-w-[700px]"> 
+                {/* min-width for better mobile experience */}
               <thead>
                 <tr className="bg-base-200 text-neutral-content">
                   <th className="p-4">#</th>
