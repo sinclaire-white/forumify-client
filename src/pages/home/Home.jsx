@@ -1,212 +1,243 @@
-import { useEffect, useState, useCallback } from "react"; // Added useCallback
-import useAxiosSecure from "../../hooks/useAxiosSecure";
-import PostCard from "./PostCard";
-import Banner from "./Banner";
-import Tags from "./Tags";
-import Announcements from "./Announcements";
-import { Fade, Slide, Zoom } from "react-awesome-reveal";
-import Swal from "sweetalert2";
-import { useLocation, useNavigate } from "react-router"; 
-
-const ITEMS_PER_PAGE = 5; // Define posts per page
+import { useState } from 'react'; 
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import useAxios from '../../hooks/useAxios'; 
+import useAxiosSecure from '../../hooks/useAxiosSecure'; 
+import PostCard from './PostCard';
+import Banner from './Banner';
+import Tags from './Tags';
+import Announcements from './Announcements';
+import { Fade, Slide } from 'react-awesome-reveal'; 
+import { Link } from 'react-router';
+import Swal from 'sweetalert2'; 
 
 const Home = () => {
-  const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedTag, setSelectedTag] = useState(null);
-  const [sortOrder, setSortOrder] = useState("newest"); // 'newest' or 'popularity'
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPosts, setTotalPosts] = useState(0); // For pagination count
-  const axiosSecure = useAxiosSecure();
-  const navigate = useNavigate();
-  const location = useLocation(); // To read current page from URL
+    const axiosPublic = useAxios(); // Using your useAxios for public routes
+    const axiosSecure = useAxiosSecure(); // Using your useAxiosSecure for protected routes
+    const queryClient = useQueryClient();
 
-  // Effect to read page from URL on initial load or URL change
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const pageParam = params.get('page');
-    if (pageParam) {
-      setCurrentPage(parseInt(pageParam));
-    } else {
-      setCurrentPage(1); // Default to page 1 if no param
-    }
-  }, [location.search]);
+    // --- State for Filters, Search, Sort, and Pagination ---
+    const [searchQuery, setSearchQuery] = useState("");
+    const [selectedTag, setSelectedTag] = useState(null); // null means no tag filter
+    const [sortBy, setSortBy] = useState("latest"); // 'latest' or 'popularity'
+    const [currentPage, setCurrentPage] = useState(1);
+    const postsPerPage = 5; // Matches your backend limit default for /posts
 
+    // --- TanStack Query for Posts ---
+    const {
+        data: postsData,
+        isLoading: arePostsLoading,
+        isError: isPostsError,
+        error: postsError,
+        refetch: refetchPosts // Add refetch function if needed for manual triggers later
+    } = useQuery({
+        queryKey: ['posts', searchQuery, selectedTag, sortBy, currentPage], // Key changes on filter/search/sort/page
+        queryFn: async () => {
+            let url = `/posts?page=${currentPage}&limit=${postsPerPage}`;
+            if (searchQuery) {
+                url += `&search=${encodeURIComponent(searchQuery)}`;
+            }
+            if (selectedTag) {
+                url += `&tag=${encodeURIComponent(selectedTag)}`;
+            }
+            if (sortBy === 'popularity') {
+                url += `&sort=popularity`;
+            }
+            const res = await axiosPublic.get(url); // Use axiosPublic for /posts
+            return res.data; // This will contain { posts: [], totalCount: N }
+        },
+        keepPreviousData: true, // Keep data while fetching new for better UX
+    });
 
-  // Memoized fetch function for better dependency management
-  const fetchPosts = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
+    const posts = postsData?.posts || [];
+    const totalPostsCount = postsData?.totalCount || 0;
+    const totalPages = Math.ceil(totalPostsCount / postsPerPage);
 
-      let url = '/posts';
-      const params = new URLSearchParams();
+    // --- TanStack Query for Popular Searches ---
+    const {
+        data: popularSearches = [],
+        isLoading: arePopularSearchesLoading
+    } = useQuery({
+        queryKey: ['popularSearches'],
+        queryFn: async () => {
+            const res = await axiosPublic.get('/popular-searches'); // Use axiosPublic for /popular-searches
+            return res.data;
+        },
+        staleTime: 1000 * 60 * 5, // Data considered fresh for 5 minutes
+        cacheTime: 1000 * 60 * 30, // Keep in cache for 30 minutes
+    });
 
-      if (searchQuery) {
-        params.append('search', searchQuery);
-      }
-      if (selectedTag) {
-        params.append('tag', selectedTag);
-      }
-      params.append('page', currentPage); // Add pagination parameters
-      params.append('limit', ITEMS_PER_PAGE);
-      params.append('sort', sortOrder); // Add sort order parameter
+    // --- Mutation for Recording Searches ---
+    // Your backend's /searches endpoint has `verifyJWT`, so we use axiosSecure here.
+    const recordSearchMutation = useMutation({
+        mutationFn: async (term) => {
+            if (term.trim()) { // Only record if the search term is not empty
+                await axiosSecure.post('/searches', { term });
+            }
+        },
+        onSuccess: () => {
+            // Invalidate the popular searches cache to refetch and update UI
+            queryClient.invalidateQueries({ queryKey: ['popularSearches'] });
+        },
+        onError: (error) => {
+            console.error("Failed to record search term:", error);
+            // Optionally, show a subtle notification to the user or log silently
+            // Swal.fire('Error', 'Failed to record search term.', 'error');
+        }
+    });
 
-      if (params.toString()) {
-        url = `${url}?${params.toString()}`;
-      }
+    // --- Handlers for Filters/Search/Sort/Pagination ---
+    const handleSearchSubmit = (query) => {
+        setSearchQuery(query);
+        setCurrentPage(1); // Always reset to the first page on a new search
+        recordSearchMutation.mutate(query); // Call the mutation to record the search
+    };
 
-      const response = await axiosSecure.get(url);
-      setPosts(response.data);
-      setError(null);
+    const handleTagClick = (tag) => {
+        setSelectedTag(tag);
+        setCurrentPage(1); // Always reset to the first page on a new tag filter
+    };
 
-      // Fetch total count only once or when filters change (not on page change if count is static)
-      if (currentPage === 1 && !searchQuery && !selectedTag) { // Only fetch total count if not filtered
-        const totalCountResponse = await axiosSecure.get('/posts-total-count');
-        setTotalPosts(totalCountResponse.data.count);
-      }
+    const handleSortChange = (e) => {
+        setSortBy(e.target.value);
+        setCurrentPage(1); // Always reset to the first page on a new sort
+    };
 
-    } catch (err) {
-      console.error("Failed to fetch posts:", err);
-      setError("Failed to load posts. Please try again later.");
-      Swal.fire('Error', 'Failed to load posts.', 'error');
-      setPosts([]);
-      setTotalPosts(0);
-    } finally {
-      setLoading(false);
-    }
-  }, [axiosSecure, searchQuery, selectedTag, currentPage, sortOrder]); // Dependencies for useCallback
+    const handlePageChange = (pageNumber) => {
+        setCurrentPage(pageNumber);
+        window.scrollTo({ top: 0, behavior: 'smooth' }); // Smooth scroll to top
+    };
 
-  useEffect(() => {
-    fetchPosts();
-  }, [fetchPosts]); // Call fetchPosts when its dependencies change
-
-  // Update URL on page change for better UX and direct linking
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    params.set('page', currentPage.toString());
-    navigate(`?${params.toString()}`, { replace: true });
-  }, [currentPage, navigate, location.search]);
-
-
-  const handleSearchSubmit = (query) => {
-    setSearchQuery(query);
-    setSelectedTag(null);
-    setCurrentPage(1); // Reset to first page on new search
-  };
-
-  const handleTagClick = (tag) => {
-    setSelectedTag(tag === selectedTag ? null : tag);
-    setSearchQuery("");
-    setCurrentPage(1); // Reset to first page on new tag filter
-  };
-
-  const handlePageChange = (page) => {
-    if (page > 0 && page <= Math.ceil(totalPosts / ITEMS_PER_PAGE)) {
-      setCurrentPage(page);
-      window.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll to top on page change
-    }
-  };
-
-  const totalPages = Math.ceil(totalPosts / ITEMS_PER_PAGE);
-  const pageNumbers = [...Array(totalPages).keys()].map(num => num + 1);
-
-  return (
-    <div className="min-h-screen bg-base-200">
-      <Banner handleSearchSubmit={handleSearchSubmit} />
-      <div className="container p-4 py-8 mx-auto">
-        <Tags handleTagClick={handleTagClick} selectedTag={selectedTag} />
-
-        <Announcements />
-
-        <Slide direction="down" triggerOnce className="mt-12">
-          <h1 className="mb-10 text-4xl font-extrabold text-center md:text-5xl text-primary drop-shadow-lg">
-            Forum Discussions
-          </h1>
-        </Slide>
-
-        {/* Sort Button */}
-        <div className="flex justify-center px-4 mb-8 md:justify-end">
-          <div className="dropdown dropdown-end">
-            <div tabIndex={0} role="button" className="m-1 btn btn-neutral">
-              Sort By: {sortOrder === 'newest' ? 'Newest' : 'Popularity'}
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 ml-2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-              </svg>
+    // --- Loading & Error States for Posts (main content) ---
+    if (arePostsLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen bg-base-200">
+                <span className="loading loading-spinner loading-lg text-primary"></span>
             </div>
-            <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
-              <li><a onClick={() => setSortOrder('newest')}>Newest</a></li>
-              <li><a onClick={() => setSortOrder('popularity')}>Popularity</a></li>
-            </ul>
-          </div>
-        </div>
+        );
+    }
 
-        {loading ? (
-          <div className="flex items-center justify-center h-60">
-            <span className="loading loading-spinner loading-lg text-primary"></span>
-          </div>
-        ) : error ? (
-          <div className="mt-10 text-xl font-semibold text-center text-red-600">
-            <p>{error}</p>
-          </div>
-        ) : posts.length === 0 ? (
-          <Fade triggerOnce>
-            <div className="mt-20 text-2xl font-medium text-center text-gray-600">
-              No posts found for your criteria.
-              <br />
-              <button
-                onClick={() => { navigate("/add-post"); setSearchQuery(""); setSelectedTag(null); setSortOrder("newest"); setCurrentPage(1); }}
-                className="mt-6 text-lg btn btn-primary"
-              >
-                Add Your First Post
-              </button>
+    if (isPostsError) {
+        console.error("Posts fetch error:", postsError);
+        return (
+            <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center bg-base-200">
+                <p className="mb-4 text-xl font-semibold text-red-600">Failed to load posts: {postsError?.message || "An unknown error occurred."}</p>
+                <button onClick={() => window.location.reload()} className="btn btn-primary">
+                    Retry
+                </button>
             </div>
-          </Fade>
-        ) : (
-          <>
-            <div className="grid max-w-2xl grid-cols-1 gap-8 mx-auto mt-10">
-              {posts.map((post) => (
-                <PostCard key={post._id} post={post} />
-              ))}
-            </div>
+        );
+    }
 
-            {/* Pagination Controls */}
-            {totalPages > 1 && (
-              <div className="flex justify-center mt-12 mb-8">
-                <div className="join">
-                  <button
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className="join-item btn btn-md btn-outline btn-primary"
-                  >
-                    « Prev
-                  </button>
-                  {pageNumbers.map(page => (
-                    <button
-                      key={page}
-                      onClick={() => handlePageChange(page)}
-                      className={`join-item btn btn-md ${currentPage === page ? 'btn-primary text-primary-content' : 'btn-outline btn-neutral'}`}
-                    >
-                      {page}
-                    </button>
-                  ))}
-                  <button
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className="join-item btn btn-md btn-outline btn-primary"
-                  >
-                    Next »
-                  </button>
+    return (
+        <div className="container px-4 mx-auto my-12 md:px-6">
+            <Banner handleSearchSubmit={handleSearchSubmit} />
+
+            <Announcements /> {/* This component already fetches its own data */}
+
+            {/* Tags Section */}
+            {/* The Tags component will now fetch its own tags using useAxios */}
+            <Tags handleTagClick={handleTagClick} selectedTag={selectedTag} />
+
+            {/* Popular Searches */}
+            <section className="px-4 py-8 mt-8 rounded-lg shadow-md md:px-10 bg-base-100">
+                <Slide direction="right" triggerOnce>
+                    <h3 className="mb-6 text-3xl font-bold text-center text-secondary">
+                        🔥 Trending Searches
+                    </h3>
+                </Slide>
+                {arePopularSearchesLoading ? (
+                    <div className="flex justify-center py-4">
+                        <span className="loading loading-dots loading-md text-primary"></span>
+                    </div>
+                ) : popularSearches.length === 0 ? (
+                    <p className="text-lg text-center text-gray-600">No popular searches yet.</p>
+                ) : (
+                    <div className="flex flex-wrap justify-center gap-3">
+                        {popularSearches.map((item, i) => (
+                            <Fade key={i} delay={i * 50} triggerOnce>
+                                <button
+                                    onClick={() => handleSearchSubmit(item._id)} // Clicking a popular search term triggers a new search
+                                    className="px-5 py-3 text-lg font-semibold text-blue-700 transition-all duration-300 transform border-2 border-blue-300 badge badge-lg hover:scale-105 hover:shadow-lg badge-outline badge-info hover:bg-info hover:text-white"
+                                >
+                                    #{item._id} ({item.count})
+                                </button>
+                            </Fade>
+                        ))}
+                    </div>
+                )}
+            </section>
+
+            {/* Posts Section */}
+            <section className="mt-12">
+                <div className="flex flex-col items-center justify-between gap-4 mb-8 sm:flex-row">
+                    <Slide direction="left" triggerOnce>
+                        <h2 className="text-4xl font-extrabold text-primary">
+                            All Posts
+                        </h2>
+                    </Slide>
+                    {/* Sort Dropdown */}
+                    <div className="form-control">
+                        <label className="label">
+                            <span className="font-semibold text-gray-700 label-text">Sort By:</span>
+                        </label>
+                        <select
+                            className="text-gray-800 select select-bordered"
+                            value={sortBy}
+                            onChange={handleSortChange}
+                        >
+                            <option value="latest">Latest</option>
+                            <option value="popularity">Popularity</option>
+                        </select>
+                    </div>
                 </div>
-              </div>
-            )}
-          </>
-        )}
-      </div>
-    </div>
-  );
+
+                {posts.length === 0 ? (
+                    <Fade triggerOnce>
+                        <p className="py-10 text-xl text-center text-gray-600">No posts found matching your criteria.</p>
+                    </Fade>
+                ) : (
+                    <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+                        {posts.map(post => (
+                            // Ensure PostCard is able to receive the 'commentCount' prop
+                            // from the 'posts' data, which your backend now includes.
+                            <PostCard key={post._id} post={post} />
+                        ))}
+                    </div>
+                )}
+
+                {/* Pagination */}
+                {totalPages > 1 && ( // Only show pagination if there's more than 1 page
+                    <div className="flex justify-center mt-12">
+                        <div className="join">
+                            <button
+                                onClick={() => handlePageChange(currentPage - 1)}
+                                disabled={currentPage === 1}
+                                className="join-item btn btn-md btn-outline btn-primary"
+                            >
+                                «
+                            </button>
+                            {[...Array(totalPages)].map((_, index) => (
+                                <button
+                                    key={index}
+                                    onClick={() => handlePageChange(index + 1)}
+                                    className={`join-item btn btn-md ${currentPage === index + 1 ? 'btn-primary' : 'btn-outline btn-primary'}`}
+                                >
+                                    {index + 1}
+                                </button>
+                            ))}
+                            <button
+                                onClick={() => handlePageChange(currentPage + 1)}
+                                disabled={currentPage === totalPages}
+                                className="join-item btn btn-md btn-outline btn-primary"
+                            >
+                                »
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </section>
+        </div>
+    );
 };
 
 export default Home;

@@ -13,8 +13,8 @@ const Membership = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-12">
-      <div className="bg-base-200 p-8 rounded-lg shadow-md text-center space-y-6">
+    <div className="max-w-4xl px-4 py-12 mx-auto">
+      <div className="p-8 space-y-6 text-center rounded-lg shadow-md bg-base-200">
         <h2 className="text-3xl font-bold">Upgrade to Gold Membership</h2>
         <p className="text-lg text-gray-600">
           You've reached your posting limit as a Bronze user. Become a member to unlock unlimited posting and earn the Gold Badge!
@@ -22,7 +22,7 @@ const Membership = () => {
 
         <div className="flex justify-center">
           <img
-            src="https://i.ibb.co/hD5nZvt/gold-badge.png" // Optional badge image
+            src="" // Optional badge image
             alt="Gold Badge"
             className="w-32 h-32"
           />
@@ -30,7 +30,7 @@ const Membership = () => {
 
         <button
           onClick={handleUpgrade}
-          className="btn btn-primary text-white text-lg px-8"
+          className="px-8 text-lg text-white btn btn-primary"
         >
           Become a Member
         </button>

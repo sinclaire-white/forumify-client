@@ -1,4 +1,4 @@
-// useAxiosSecure.js
+
 import axios from 'axios';
 import { useNavigate } from 'react-router';
 import { useEffect } from 'react';

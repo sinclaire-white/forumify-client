@@ -16,6 +16,7 @@ import ReportedActivity from "../pages/dashboard/admin/ReportedActivity";
 import Membership from "../pages/membership/Membership";
 import SinglePostPage from "../pages/home/SinglePost";
 import CommentsPage from "../pages/dashboard/user/CommentsPage";
+import PaymentSuccess from "../pages/membership/PaymentSuccess";
 
 export const router = createBrowserRouter([
   {
@@ -27,13 +28,29 @@ export const router = createBrowserRouter([
         Component: Home,
       },
       {
-        path:'/membership',
-        element: <PrivateRoute><Membership></Membership></PrivateRoute>
+        path: "/membership",
+        element: (
+          <PrivateRoute>
+            <Membership></Membership>
+          </PrivateRoute>
+        ),
       },
       {
-        path: '/post/:id',
-        element: <PrivateRoute><SinglePostPage></SinglePostPage></PrivateRoute>
-      }
+        path: "/post/:id",
+        element: (
+          <PrivateRoute>
+            <SinglePostPage></SinglePostPage>
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: "/payment-success",
+        element: (
+          <PrivateRoute>
+            <PaymentSuccess></PaymentSuccess>
+          </PrivateRoute>
+        ),
+      },
     ],
   },
   {
@@ -61,7 +78,7 @@ export const router = createBrowserRouter([
       // USER DASHBOARD
       {
         index: true,
-        Component: () => <Navigate to="/dashboard/user-profile" />,
+        element: <Navigate to="/dashboard/user-profile" />,
       },
 
       {
@@ -78,7 +95,7 @@ export const router = createBrowserRouter([
       },
       {
         path: "comments/:postId",
-        Component: CommentsPage
+        Component: CommentsPage,
       },
 
       // ADMIN DASHBOARD

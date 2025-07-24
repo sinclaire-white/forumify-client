@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useState } from "react"; // Keep useState for newCommentText
 import { useParams, useNavigate } from "react-router";
 import useAxiosSecure from "../../hooks/useAxiosSecure";
-import useAuth from "../../hooks/useAuth"; // Import useAuth
+import useAuth from "../../hooks/useAuth";
 import { Fade, Slide } from "react-awesome-reveal";
 import Swal from "sweetalert2";
 import {
@@ -9,57 +9,59 @@ import {
   WhatsappShareButton,
   FacebookIcon,
   WhatsappIcon,
-} from "react-share"; 
+} from "react-share";
+import { useQuery, useQueryClient } from "@tanstack/react-query"; // Import useQuery and useQueryClient
 
 const SinglePostPage = () => {
   const { id } = useParams();
-  const [post, setPost] = useState(null);
-  const [comments, setComments] = useState([]); // State for comments
-  const [newCommentText, setNewCommentText] = useState(""); // State for new comment input
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [newCommentText, setNewCommentText] = useState("");
   const axiosSecure = useAxiosSecure();
-  const { user } = useAuth(); // Get user from auth context
+  const { user } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient(); // Initialize queryClient
 
-  // URL for sharing (will be dynamic based on current page)
-  const shareUrl = `${window.location.origin}/post/${id}`; // Dynamic share URL
+  const shareUrl = `${window.location.origin}/post/${id}`;
 
-  // --- Fetch Post Details and Comments ---
-  useEffect(() => {
-    const fetchPostDetails = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const postResponse = await axiosSecure.get(`/posts/${id}`);
-        setPost(postResponse.data);
+  // --- TanStack Query for Post Details ---
+  const {
+    data: post, // Rename data to 'post' for convenience
+    isLoading: isPostLoading,
+    isError: isPostError,
+    error: postError,
+  } = useQuery({
+    queryKey: ["post", id], // Unique key for this query
+    queryFn: async () => {
+      if (!id) return null; // Prevent fetching if ID is not available
+      const res = await axiosSecure.get(`/posts/${id}`);
+      return res.data;
+    },
+    enabled: !!id, // Only run query if 'id' exists
+    // You can add refetchOnWindowFocus: false if you don't want it to refetch automatically on focus
+  });
 
-        // Fetch comments for this post
-        const commentsResponse = await axiosSecure.get(`/comments/${id}`);
-        setComments(commentsResponse.data);
-
-      } catch (err) {
-        console.error("Failed to fetch post details or comments:", err);
-        setError("Failed to load post details. It might not exist or there was a server error.");
-        Swal.fire('Error', 'Failed to load post.', 'error');
-        setPost(null);
-        setComments([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (id) {
-      fetchPostDetails();
-    }
-  }, [id, axiosSecure]);
+  // --- TanStack Query for Comments ---
+  const {
+    data: comments, // Rename data to 'comments'
+    isLoading: isCommentsLoading,
+    isError: isCommentsError,
+    error: commentsError,
+  } = useQuery({
+    queryKey: ["comments", id], // Unique key for comments related to this post
+    queryFn: async () => {
+      if (!id) return []; // Prevent fetching if ID is not available
+      const res = await axiosSecure.get(`/comments/${id}`);
+      return res.data;
+    },
+    enabled: !!id, // Only run query if 'id' exists
+    initialData: [], // Provide initial empty array to prevent issues before data loads
+  });
 
   // --- Comment Submission ---
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
     if (!user) {
       Swal.fire('Login Required', 'You need to be logged in to comment.', 'warning');
-      navigate('/login'); // Redirect to login
+      navigate('/login');
       return;
     }
     if (!newCommentText.trim()) {
@@ -70,7 +72,7 @@ const SinglePostPage = () => {
     try {
       const commentData = {
         postId: id,
-        postTitle: post?.title, // Get post title from fetched post data
+        postTitle: post?.title,
         commentText: newCommentText,
         authorEmail: user.email,
         authorName: user.displayName,
@@ -80,9 +82,9 @@ const SinglePostPage = () => {
       if (res.data.insertedId) {
         Swal.fire('Success', 'Comment added!', 'success');
         setNewCommentText(""); // Clear input
-        // Re-fetch comments to show the new one immediately
-        const commentsResponse = await axiosSecure.get(`/comments/${id}`);
-        setComments(commentsResponse.data);
+
+        // Invalidate the 'comments' query cache to trigger a refetch
+        queryClient.invalidateQueries({ queryKey: ["comments", id] });
       }
     } catch (error) {
       console.error("Error adding comment:", error);
@@ -91,7 +93,7 @@ const SinglePostPage = () => {
   };
 
   // --- Voting ---
-  const handleVote = async (type) => { // 'upvote' or 'downvote'
+  const handleVote = async (type) => {
     if (!user) {
       Swal.fire('Login Required', 'You need to be logged in to vote.', 'warning');
       navigate('/login');
@@ -100,21 +102,23 @@ const SinglePostPage = () => {
 
     try {
       const res = await axiosSecure.patch(`/posts/vote/${id}`, { type });
-      if (res.data.modifiedCount > 0) {
-        Swal.fire('Voted!', `You ${type}d this post.`, 'success');
-        // Optimistically update UI or re-fetch post to show new vote count
-        setPost(prevPost => ({
-          ...prevPost,
-          [type === 'upvote' ? 'upVote' : 'downVote']: prevPost[type === 'upvote' ? 'upVote' : 'downVote'] + 1
-        }));
+
+      if (res.data.success) {
+        Swal.fire('Voted!', res.data.message, 'success');
+        // Invalidate the 'post' query cache to trigger a refetch of post details
+        queryClient.invalidateQueries({ queryKey: ["post", id] });
+      } else {
+        Swal.fire('Error', 'Vote operation failed on server.', 'error');
       }
     } catch (error) {
       console.error(`Error ${type}ing post:`, error);
-      Swal.fire('Error', `Failed to ${type} this post.`, 'error');
+      const errorMessage = error.response?.data?.message || `Failed to ${type} this post.`;
+      Swal.fire('Error', errorMessage, 'error');
     }
   };
 
-  if (loading) {
+  // --- Loading and Error States ---
+  if (isPostLoading || isCommentsLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-base-200">
         <span className="loading loading-spinner loading-lg text-primary"></span>
@@ -122,10 +126,11 @@ const SinglePostPage = () => {
     );
   }
 
-  if (error) {
+  if (isPostError) {
+    console.error("Post fetch error:", postError); // Log the actual error
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center bg-base-200">
-        <p className="mb-4 text-xl font-semibold text-red-600">{error}</p>
+        <p className="mb-4 text-xl font-semibold text-red-600">Failed to load post details: {postError?.message || "Unknown error"}</p>
         <button onClick={() => navigate('/')} className="btn btn-primary">
           Go to Home
         </button>
@@ -133,6 +138,7 @@ const SinglePostPage = () => {
     );
   }
 
+  // Handle case where post is null (e.g., 404 from backend after loading)
   if (!post) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center bg-base-200">
@@ -143,6 +149,15 @@ const SinglePostPage = () => {
       </div>
     );
   }
+
+  // isCommentsError is generally less critical to block the whole page,
+  // you might display a message within the comments section instead.
+  if (isCommentsError) {
+    console.error("Comments fetch error:", commentsError);
+    // You could render a message inside the comments section instead of blocking the whole page
+    // return <p>Error loading comments: {commentsError?.message}</p>;
+  }
+
 
   const postDate = post.createdAt ? new Date(post.createdAt).toLocaleDateString("en-US", {
     year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
