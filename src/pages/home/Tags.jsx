@@ -1,82 +1,75 @@
-
-import { Fade, Slide } from "react-awesome-reveal";
+// src/components/Announcements.jsx
 import { useQuery } from "@tanstack/react-query";
-import useAxios from "../../hooks/useAxios"; // Use your public axios hook
+import { Bounce } from "react-awesome-reveal";
+import useAxiosSecure from "../../hooks/useAxiosSecure";
+import { motion } from "framer-motion";
 
-const Tags = ({ handleTagClick, selectedTag }) => {
-    const axiosPublic = useAxios(); // Initialize your public axios instance
+const Announcements = () => {
+  const axiosSecure = useAxiosSecure();
 
-    // --- TanStack Query for All Tags ---
-    const { data: allAvailableTags = [], isLoading: areTagsLoading, isError: isTagsError } = useQuery({
-        queryKey: ['allTags'], // Unique key for this query
-        queryFn: async () => {
-            const res = await axiosPublic.get('/tags'); // Fetch tags from your backend
-            // Assuming your /tags endpoint returns an array like [{ _id: "...", name: "tag_name" }]
-            return res.data.map(tag => tag.name); // Extract just the `name` property for rendering
-        },
-        staleTime: Infinity, // Tags don't change often, so cache indefinitely
-        cacheTime: 1000 * 60 * 60 * 24, // Keep in cache for 24 hours
-        onError: (error) => {
-            console.error("Error fetching tags:", error);
-            // Optionally, show a toast or message about failed tag load
-        }
-    });
+  const { data: announcements = [], isLoading, isError } = useQuery({
+    queryKey: ["announcements"],
+    queryFn: async () => {
+      const res = await axiosSecure.get("/announcements");
+      return res.data;
+    },
+    staleTime: 1000 * 60 * 5, // Keep fresh for 5 minutes
+    cacheTime: 1000 * 60 * 30, // Keep in cache for 30 minutes
+  });
 
-    if (areTagsLoading) {
-        return (
-            <section className="flex items-center justify-center px-4 py-12 mt-8 rounded-lg shadow-xl md:px-10 bg-base-100">
-                <span className="loading loading-dots loading-md text-primary"></span>
-            </section>
-        );
-    }
+  // Return null if loading, error, or no announcements, so its grid column can collapse
+  if (isLoading || isError || announcements.length === 0) {
+    // Optionally, you can return a small loading spinner or placeholder if you want *some* visual presence
+    // but for column collapsing, returning null is best.
+    return null;
+  }
 
-    // You might want to handle `isTagsError` by showing a message or retrying.
-    // For now, if there's an error, `allAvailableTags` will just be an empty array.
-
-    return (
-        <section className="px-4 py-12 mt-8 rounded-lg shadow-xl md:px-10 bg-base-100">
-            <Slide direction="left" triggerOnce>
-                <h3 className="mb-6 text-3xl font-bold text-center text-secondary">
-                    Explore by Tags
-                </h3>
-            </Slide>
-            <div className="flex flex-wrap justify-center gap-3">
-                {allAvailableTags.length === 0 ? (
-                    <Fade triggerOnce>
-                        <p className="text-lg text-gray-600">No tags available.</p>
-                    </Fade>
-                ) : (
-                    allAvailableTags.map((tag, i) => (
-                        <Fade key={i} delay={i * 50} triggerOnce> {/* Staggered fade for tags */}
-                            <button
-                                onClick={() => handleTagClick(tag.toLowerCase())} // Convert to lowercase for consistency
-                                className={`badge badge-lg border-2 font-semibold text-lg py-3 px-5 transition-all duration-300 transform hover:scale-105 hover:shadow-lg
-                                    ${selectedTag === tag.toLowerCase()
-                                        ? "badge-primary text-primary-content border-primary"
-                                        : "badge-outline badge-neutral text-gray-700 border-gray-300 hover:bg-neutral hover:text-white"
-                                    }`}
-                            >
-                                #{tag}
-                            </button>
-                        </Fade>
-                    ))
-                )}
+  return (
+    <motion.section
+      className="px-4 mt-6"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <div className="max-w-4xl mx-auto">
+        <div className="p-1 shadow-lg bg-gradient-to-r from-primary to-secondary rounded-2xl">
+          <div className="p-5 bg-base-100 rounded-xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 rounded-full bg-primary/10">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-primary" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15H9v-2h2v2zm0-4H9V7h2v6z" /></svg> {/* Simple info icon */}
+              </div>
+              <h3 className="text-xl font-bold text-base-content">Announcements ({announcements.length})</h3>
             </div>
-            {selectedTag && ( // Only show clear filter if a tag is selected
-                <Fade delay={200} triggerOnce>
-                    <p className="mt-8 text-lg font-medium text-center text-gray-700">
-                        Currently filtering by: <span className="font-bold capitalize text-primary">{selectedTag}</span>
-                        <button
-                            onClick={() => handleTagClick(null)} // Clear filter button by passing null
-                            className="ml-3 text-red-500 btn btn-xs btn-ghost hover:text-red-700"
-                        >
-                            (Clear Filter)
-                        </button>
-                    </p>
-                </Fade>
-            )}
-        </section>
-    );
+
+            <div className="space-y-4">
+              {announcements.map((note, i) => (
+                <motion.div
+                  key={i}
+                  className="p-4 border rounded-lg shadow-sm border-base-300 bg-base-100"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  // Removed whileHover as per general instruction for non-interactive elements,
+                  // assuming announcements are read-only. Add back if interactive.
+                >
+                  <h4 className="flex items-center gap-2 mb-2 text-lg font-semibold text-base-content">
+                    <span className="p-1 rounded-full bg-primary/10 text-primary">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.001 2.001 0 0118 14.59V10c0-3.21-1.79-5.905-5-6.57V3a1 1 0 10-2 0v.42c-3.21.66-5 3.36-5 6.57v4.59c0 .53-.21 1.04-.595 1.405L4 17h5m6 0v1a3 3 0 01-6 0v-1m6 0H9" />
+                      </svg>
+                    </span>
+                    {note.title}
+                  </h4>
+                  <p className="mb-2 text-sm text-gray-500">{new Date(note.timestamp).toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                  <p className="whitespace-pre-line text-base-content">{note.description}</p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </motion.section>
+  );
 };
 
-export default Tags;
+export default Announcements;

@@ -1,57 +1,158 @@
+// src/components/Banner.jsx
 import { useState } from "react";
-import { Zoom, Fade } from "react-awesome-reveal"; // For animations
+import { motion, AnimatePresence } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
+import { Fade } from "react-awesome-reveal";
+import { IconSearch } from "@tabler/icons-react"; // Remember: npm install @tabler/icons-react
+import useAxios from "../../hooks/useAxios"; // Using useAxios as specified
 
-const Banner = ({ handleSearchSubmit }) => { // Accept handleSearchSubmit prop
-  const [localSearchQuery, setLocalSearchQuery] = useState(""); // Local state for input field
+const Banner = ({ handleSearchSubmit }) => {
+  const [localSearchQuery, setLocalSearchQuery] = useState("");
+  const axios = useAxios(); // Initialize your axios instance
 
-  const onSearch = () => {
-    handleSearchSubmit(localSearchQuery); // Pass the query up to Home component
+  // Fetch popular searches with TanStack Query
+  const { data: popularSearches = [], isLoading } = useQuery({
+    queryKey: ['popularSearches'],
+    queryFn: async () => {
+      const response = await axios.get("/popular-searches"); // Using useAxios
+      return response.data; // Expecting an array of objects like { _id: "tag_name", count: N }
+    },
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000,
+    onError: (error) => {
+      console.error("Error fetching popular searches:", error);
+    }
+  });
+
+  const handleSearch = (e) => {
+      e.preventDefault();
+      if (localSearchQuery.trim()) {
+        handleSearchSubmit(localSearchQuery); // Trigger search in parent (Home.jsx)
+      } else {
+        // Optionally, clear current filter if search input is empty
+        handleSearchSubmit("");
+      }
+  };
+
+  const handleTagClick = (tag) => {
+    setLocalSearchQuery(tag); // Update search input with the tag
+    handleSearchSubmit(tag); // Trigger search in parent (Home.jsx)
   };
 
   const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
-      onSearch();
+    if (e.key === "Enter") {
+      handleSearch(e);
     }
   };
 
   return (
-    <section className="relative px-4 py-20 overflow-hidden text-white shadow-lg bg-gradient-to-r from-blue-600 to-blue-800 md:px-10">
-      {/* Background overlay/design elements if any from Aceternity UI, e.g., patterns */}
-      <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/clean-textile.png")' }}></div>
-
-      <div className="relative z-10 mx-auto space-y-6 text-center max-w-7xl">
-        <Zoom cascade damping={0.1} triggerOnce>
-          <h1 className="mb-4 text-4xl font-extrabold leading-tight tracking-tight md:text-6xl">
-            Welcome to <span className="text-yellow-300">Forumify</span>
-          </h1>
-          <p className="max-w-2xl mx-auto text-lg font-light md:text-2xl opacity-90">
-            Connect, Share, and Grow with a vibrant community. Your thoughts matter.
-          </p>
-        </Zoom>
-
-        {/* Search Bar */}
-        <Fade delay={500} triggerOnce>
-          <div className="flex flex-col items-center justify-center gap-4 mt-10 md:flex-row">
-            <input
-              type="text"
-              placeholder="Search posts by title or tag..."
-              className="w-full px-6 py-3 text-lg text-gray-800 transition-all duration-300 transform border border-blue-400 rounded-full shadow-xl md:w-3/5 lg:w-2/5 focus:outline-none focus:ring-4 focus:ring-yellow-400 focus:border-transparent hover:scale-105"
-              value={localSearchQuery}
-              onChange={(e) => setLocalSearchQuery(e.target.value)}
-              onKeyPress={handleKeyPress}
-            />
-            <button
-              onClick={onSearch}
-              className="px-8 py-3 text-lg font-bold text-blue-900 transition-all duration-300 transform bg-yellow-400 rounded-full shadow-xl btn hover:bg-yellow-500 hover:scale-105 hover:shadow-2xl"
-            >
-              Search
-            </button>
-          </div>
-        </Fade>
+    <div className="relative h-[60vh] sm:h-[70vh] lg:h-[80vh] w-full flex flex-col items-center justify-center overflow-hidden">
+      {/* Background Image/Overlay */}
+      <div
+        className="absolute inset-0 bg-center bg-cover"
+        style={{ backgroundImage: "url('https://picsum.photos/1920/1080?random=1')" }} // Placeholder image
+      >
+        {/* Subtle gradient overlay for better text contrast */}
+        <div className="absolute inset-0 bg-gradient-to-t from-base-content/70 via-base-content/50 to-transparent"></div>
       </div>
 
-      {/* No direct search results display here; Home component manages it */}
-    </section>
+      {/* Content Section (Search Bar, Title, Popular Searches) */}
+      <div className="relative z-10 flex flex-col items-center px-4 py-8 text-center border shadow-2xl rounded-xl backdrop-blur-sm bg-base-100/10 border-primary/20">
+        {/* Main Title - Fade in */}
+        <Fade direction="up" triggerOnce>
+          <motion.h1
+            className="mb-8 text-4xl font-extrabold leading-tight sm:text-5xl lg:text-6xl text-base-100 drop-shadow-xl"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.3 }}
+          >
+            Connect, Share, Grow.
+            <br />
+            Your Community Awaits.
+          </motion.h1>
+        </Fade>
+
+        {/* Search Bar - Absolutely Side-by-Side Design (Confirmed) */}
+        <Fade direction="up" delay={300} triggerOnce>
+          <motion.form
+            onSubmit={handleSearch}
+            className="w-full max-w-xl mb-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.5 }}
+          >
+            <div className="flex overflow-hidden border rounded-full shadow-lg border-primary/40 focus-within:border-primary">
+              <input
+                type="text"
+                placeholder="Search posts by tags..."
+                className="flex-grow py-3 pl-6 pr-2 border-none rounded-l-full rounded-r-none input input-bordered input-lg bg-base-100 text-base-content focus:outline-none focus:ring-0"
+                value={localSearchQuery}
+                onChange={(e) => setLocalSearchQuery(e.target.value)}
+                onKeyPress={handleKeyPress}
+                aria-label="Search posts"
+              />
+              <motion.button
+                type="submit"
+                className="flex items-center flex-shrink-0 gap-2 px-6 transition-all duration-300 transform rounded-l-none rounded-r-full btn btn-primary btn-lg hover:scale-105 active:scale-95"
+                aria-label="Submit search"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <IconSearch className="h-7 w-7" />
+                <span className="hidden sm:inline">Search</span>
+              </motion.button>
+            </div>
+          </motion.form>
+        </Fade>
+
+        {/* Popular Searches - Simple Text-like Tags (No Hover) */}
+        {popularSearches.length > 0 && (
+          <Fade direction="up" cascade damping={0.1} triggerOnce>
+            <div className="mb-4 text-lg font-semibold text-base-100 drop-shadow-md">Popular Tags:</div>
+            <div className="flex flex-wrap justify-center gap-3">
+              <AnimatePresence>
+                {popularSearches.map((search, i) => (
+                  <motion.button
+                    key={search._id}
+                    onClick={() => handleTagClick(search._id)}
+                    className="flex items-center gap-2 px-3 py-1 text-sm font-semibold transition-colors duration-200 border rounded-full text-base-100 border-base-100/30 focus:outline-none focus:ring-2 focus:ring-primary/50 active:scale-95 active:bg-primary/20 active:border-primary" // Subtle active state
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    transition={{
+                      delay: i * 0.1,
+                      type: "spring",
+                      damping: 10
+                    }}
+                    // whileHover is explicitly removed as requested
+                    whileTap={{ scale: 0.95 }}
+                    aria-label={`Filter by tag ${search._id}`}
+                  >
+                    <span>#</span>
+                    {search._id}
+                    <span className="font-bold bg-base-100/20 rounded-full px-2 py-0.5 text-base-content/80">
+                      {search.count}
+                    </span>
+                  </motion.button>
+                ))}
+              </AnimatePresence>
+            </div>
+          </Fade>
+        )}
+
+        {/* Loading state for popular searches */}
+        {isLoading && (
+          <div className="flex gap-3 mt-12">
+            {[...Array(3)].map((_, i) => (
+              <div
+                key={i}
+                className="w-24 h-10 rounded-full bg-base-100/20 animate-pulse"
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 

@@ -17,6 +17,8 @@ import Membership from "../pages/membership/Membership";
 import SinglePostPage from "../pages/home/SinglePost";
 import CommentsPage from "../pages/dashboard/user/CommentsPage";
 import PaymentSuccess from "../pages/membership/PaymentSuccess";
+import AdminRoute from "./AdminRoute";
+import Unauthorized from "./Unauthorized";
 
 export const router = createBrowserRouter([
   {
@@ -26,6 +28,10 @@ export const router = createBrowserRouter([
       {
         index: true,
         Component: Home,
+      },
+      {
+        path: "/unauthorized", 
+        Component: Unauthorized,
       },
       {
         path: "/membership",
@@ -101,20 +107,38 @@ export const router = createBrowserRouter([
       // ADMIN DASHBOARD
       {
         path: "admin-profile",
-        Component: AdminProfile,
+        element: (
+          <AdminRoute>
+            <AdminProfile />
+          </AdminRoute>
+        ),
       },
       {
         path: "manage-users",
-        Component: ManageUsers,
+        element: (
+          <AdminRoute>
+            <ManageUsers />
+          </AdminRoute>
+        ),
       },
       {
         path: "make-announcement",
-        Component: MakeAnnounce,
+        element: (
+          <AdminRoute>
+            <MakeAnnounce />
+          </AdminRoute>
+        ),
       },
       {
         path: "reported",
-        Component: ReportedActivity,
+        element: (
+          <AdminRoute>
+            <ReportedActivity />
+          </AdminRoute>
+        ),
       },
+      
     ],
+    
   },
 ]);
