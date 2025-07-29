@@ -21,7 +21,7 @@ const AuthProvider = ({ children }) => {
   const fetchUserRoleBadge = async (email) => {
     try {
       const res = await fetch(
-        `http://localhost:5000/users/check-email?email=${email}`
+        `https://forum-server-ten-khaki.vercel.app/users/check-email?email=${email}`
       );
       const data = await res.json();
       if (data.exists) {
