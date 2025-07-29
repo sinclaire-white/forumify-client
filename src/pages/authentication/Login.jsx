@@ -1,20 +1,22 @@
 import { Link, useNavigate } from "react-router";
 import { useForm } from "react-hook-form";
 import useAuth from "../../hooks/useAuth";
-import useAxios from "../../hooks/useAxios";
+import useAxios from "../../hooks/useAxios"; 
+import useAxiosSecure from "../../hooks/useAxiosSecure"; 
 import Swal from "sweetalert2";
 
 const Login = () => {
   const { loginUser, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
-  const axios = useAxios();
+  const axios = useAxios(); 
+  const axiosSecure = useAxiosSecure(); 
 
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm({
-    defaultValues: { // ADDED: Default values for controlled components
+    defaultValues: {
       email: '',
       password: '',
     }
@@ -28,8 +30,9 @@ const Login = () => {
       // 2. Get Firebase ID token
       const idToken = await result.user.getIdToken();
 
-      // 3. Exchange for JWT
-      const jwtRes = await axios.post("/jwt", { token: idToken }); // Corrected to 'token'
+      // 3. Exchange for JWT (use public axios for this initial JWT exchange, or use axiosSecure after token is set)
+      
+      const jwtRes = await axios.post("/jwt", { token: idToken });
 
       // 4. Store JWT in localStorage
       localStorage.setItem("access-token", jwtRes.data.token);
@@ -65,6 +68,15 @@ const Login = () => {
       // 1. Login with Google
       const result = await signInWithGoogle();
 
+      // 2. Get Firebase ID token and exchange for JWT IMMEDIATELY
+      // This call doesn't require JWT, so `axios` (the public one) is fine.
+      const idToken = await result.user.getIdToken();
+      const jwtRes = await axios.post("/jwt", { token: idToken });
+
+      // 3. Store JWT in localStorage BEFORE making any authenticated requests
+      localStorage.setItem("access-token", jwtRes.data.token);
+      // console.log("JWT token set in localStorage:", localStorage.getItem("access-token")); // Debugging line
+
       const name = result.user.displayName || "Google User";
       const photoURL = result.user.photoURL || "https://via.placeholder.com/150";
 
@@ -73,29 +85,24 @@ const Login = () => {
         email: result.user.email,
         photo: photoURL,
         role: "user",
-        badge: "bronze",
+        badge: "bronze", // Default badge for new users
       };
 
-      // 2. Save/update user in database (robust check for existing user) using public endpoint
+      // 4. Now, check user existence and save/update.
+      
       const checkUserResponse = await axios.get(`/users/check-email?email=${result.user.email}`);
       if (checkUserResponse.data.exists) {
-        // If user exists, update their profile details (like name/photo/badge)
-        await axios.patch(`/users/${checkUserResponse.data.user._id}`, {
+       
+         
+        await axiosSecure.patch(`/users/${checkUserResponse.data.user._id}`, { 
           name: name,
           photo: photoURL,
-          badge: "bronze"
+          badge: checkUserResponse.data.user.badge || "bronze"
         });
       } else {
-        // If user doesn't exist, create a new one
+       
         await axios.post("/users", userData);
       }
-
-      // 3. Get Firebase ID token and exchange for JWT
-      const idToken = await result.user.getIdToken();
-      const jwtRes = await axios.post("/jwt", { token: idToken }); // Corrected to 'token'
-
-      // 4. Store JWT in localStorage
-      localStorage.setItem("access-token", jwtRes.data.token);
 
       Swal.fire({
         icon: "success",

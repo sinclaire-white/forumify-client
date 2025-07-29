@@ -1,59 +1,88 @@
-import React, { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"; // Import useQuery, useMutation, useQueryClient
-import useAxiosSecure from "../../../hooks/useAxiosSecure";
 
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import useAxiosSecure from "../../../hooks/useAxiosSecure";
+import Swal from "sweetalert2";
+import { motion } from "framer-motion";
 
 const ManageUsers = () => {
   const axiosSecure = useAxiosSecure();
-  const queryClient = useQueryClient(); // Initialize queryClient
-
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const usersPerPage = 10; // Requirement: 10 users per page
+  const usersPerPage = 10;
 
-  // Fetch users with search and pagination using Tanstack Query
+  // Debounce search input
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [searchTerm]);
+
+  // Fetch users
   const {
-    data: usersData = { users: [], totalUsers: 0 }, // Default to empty array and 0
+    data: usersData = { users: [], totalUsers: 0 },
     isLoading,
     isError,
     error,
   } = useQuery({
-    queryKey: ["users", searchTerm, currentPage], // Query key includes search and page
+    queryKey: ["users", debouncedSearch, currentPage],
     queryFn: async () => {
       const res = await axiosSecure.get(
-        `/users?search=${searchTerm}&page=${currentPage}&limit=${usersPerPage}` // Backend endpoint
+        `/users?search=${debouncedSearch}&page=${currentPage}&limit=${usersPerPage}`
       );
       return res.data;
     },
-    keepPreviousData: true, // Optional: keeps previous data while fetching new page
+    keepPreviousData: true,
   });
 
   const users = usersData.users;
   const totalUsers = usersData.totalUsers;
   const totalPages = Math.ceil(totalUsers / usersPerPage);
 
-  // Mutation for making a user admin
-  const { mutate: makeAdminMutation } = useMutation({
+  // Mutation for making admin
+  const { mutate: makeAdminMutation, isLoading: isMakingAdmin } = useMutation({
     mutationFn: async (userId) => {
-      const res = await axiosSecure.patch(`/users/${userId}/make-admin`); // Your backend endpoint
+      const res = await axiosSecure.patch(`/users/${userId}/make-admin`);
       return res.data;
     },
-    onSuccess: () => {
-      alert("User successfully made admin!");
-      // Invalidate the 'users' query to refetch the updated user list
+    onSuccess: (data) => {
+      Swal.fire({
+        icon: "success",
+        title: "Success!",
+        text: data.message,
+        confirmButtonColor: "#3B82F6",
+      });
       queryClient.invalidateQueries(["users"]);
     },
     onError: (err) => {
-      console.error("Failed to make admin:", err);
-      alert("Failed to make admin. Please try again.");
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: `Failed to make admin: ${err.response?.data?.message || err.message}`,
+        confirmButtonColor: "#EF4444",
+      });
     },
   });
 
   const handleMakeAdmin = (id) => {
-    makeAdminMutation(id);
+    Swal.fire({
+      title: "Are you sure?",
+      text: "This user will be promoted to admin.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3B82F6",
+      cancelButtonColor: "#EF4444",
+      confirmButtonText: "Yes, make admin",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        makeAdminMutation(id);
+      }
+    });
   };
 
-  // Pagination handlers
   const handleNextPage = () => {
     if (currentPage < totalPages) {
       setCurrentPage((prev) => prev + 1);
@@ -62,25 +91,60 @@ const ManageUsers = () => {
 
   const handlePrevPage = () => {
     if (currentPage > 1) {
-      setCurrentPage((prev) => prev - 1);
+      setCurrentPage((prev) => prev -1);
     }
   };
 
-  if (isLoading) return <div>Loading users...</div>;
-  if (isError) return <div>Error loading users: {error.message}</div>;
+  if (isLoading) {
+    return (
+      <motion.div
+        className="flex items-center justify-center min-h-screen"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        <span className="loading loading-spinner loading-lg text-primary"></span>
+      </motion.div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <motion.div
+        className="mt-8 text-center text-red-500"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        Error loading users: {error.message}
+      </motion.div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-3xl font-bold">Manage Users</h2>
-
-      <input
-        type="text"
-        placeholder="Search by username"
-        className="w-full max-w-md input input-bordered"
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-      />
-
+    <motion.div
+      className="px-6 py-8 space-y-6 shadow-xl bg-gradient-to-br from-base-200 to-base-300 rounded-xl"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">
+        Manage Users
+      </h2>
+      <div className="relative w-full max-w-md">
+        <input
+          type="text"
+          placeholder=" "
+          className="w-full placeholder-transparent transition-all duration-200 ease-in-out peer input input-bordered focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+        <label
+          className="absolute left-3 -top-2.5 px-1 text-sm text-gray-500 transition-all z-10 bg-base-100 peer-placeholder-shown:top-3 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:-top-2.5 peer-focus:text-sm peer-focus:text-primary"
+        >
+          Search by username
+        </label>
+      </div>
       <div className="overflow-x-auto">
         <table className="table w-full">
           <thead>
@@ -94,24 +158,29 @@ const ManageUsers = () => {
           </thead>
           <tbody>
             {users.length > 0 ? (
-              users.map(({ _id, name, email, role, membershipStatus }) => ( // Adjust keys based on your backend
-                <tr key={_id}>
+              users.map(({ _id, name, email, role, badge }) => (
+                <motion.tr
+                  key={_id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.1 * users.indexOf({ _id, name, email, role, badge }), duration: 0.4 }}
+                >
                   <td>{name}</td>
                   <td>{email}</td>
-                  <td>{role === "admin" ? "Admin" : "User"}</td> {/* Use 'role' from backend */}
-                  <td>{membershipStatus || "Free"}</td>{" "}
-                  {/* Adjust key based on backend */}
+                  <td>{role === "admin" ? "Admin" : "User"}</td>
+                  <td>{badge === "gold" ? "Gold" : "Bronze"}</td>
                   <td>
-                    {role !== "admin" && ( // Only show button if not already admin
+                    {role !== "admin" && (
                       <button
                         className="btn btn-sm btn-primary"
                         onClick={() => handleMakeAdmin(_id)}
+                        disabled={isMakingAdmin}
                       >
                         Make Admin
                       </button>
                     )}
                   </td>
-                </tr>
+                </motion.tr>
               ))
             ) : (
               <tr>
@@ -123,10 +192,13 @@ const ManageUsers = () => {
           </tbody>
         </table>
       </div>
-
-      {/* Pagination Controls */}
       {totalPages > 1 && (
-        <div className="flex justify-center gap-4 mt-6">
+        <motion.div
+          className="flex justify-center gap-4 mt-6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3, duration: 0.4 }}
+        >
           <button
             className="btn btn-outline"
             onClick={handlePrevPage}
@@ -144,9 +216,9 @@ const ManageUsers = () => {
           >
             Next
           </button>
-        </div>
+        </motion.div>
       )}
-    </div>
+    </motion.div>
   );
 };
 

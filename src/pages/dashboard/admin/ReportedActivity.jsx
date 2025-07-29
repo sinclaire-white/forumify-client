@@ -1,13 +1,14 @@
-import React from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"; // Import necessary hooks
-import useAxiosSecure from "../../../hooks/useAxiosSecure";
 
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import useAxiosSecure from "../../../hooks/useAxiosSecure";
+import Swal from "sweetalert2";
+import { motion } from "framer-motion";
 
 const ReportedActivity = () => {
   const axiosSecure = useAxiosSecure();
   const queryClient = useQueryClient();
 
-  // Fetch reported comments using Tanstack Query
+  // Fetch reported comments
   const {
     data: reports = [],
     isLoading,
@@ -16,93 +17,186 @@ const ReportedActivity = () => {
   } = useQuery({
     queryKey: ["reportedComments"],
     queryFn: async () => {
-      const res = await axiosSecure.get("/reports"); // Your backend endpoint
+      const res = await axiosSecure.get("/reports");
       return res.data;
     },
   });
 
-  // Mutation for deleting a reported comment/activity
-  const { mutate: deleteReportedComment } = useMutation({
+  // Mutation for deleting a report
+  const { mutate: deleteReport, isLoading: isDeleting } = useMutation({
     mutationFn: async (reportId) => {
-      const res = await axiosSecure.delete(`/reports/${reportId}`); // Your backend endpoint to delete a report
+      const res = await axiosSecure.delete(`/reports/${reportId}`);
       return res.data;
     },
-    onSuccess: () => {
-      alert("Reported comment deleted!");
-      queryClient.invalidateQueries(["reportedComments"]); // Invalidate to refetch the list
+    onSuccess: (data) => {
+      Swal.fire({
+        icon: "success",
+        title: "Success!",
+        text: data.message,
+        confirmButtonColor: "#3B82F6",
+      });
+      queryClient.invalidateQueries(["reportedComments"]);
     },
     onError: (err) => {
-      console.error("Failed to delete reported comment:", err);
-      alert("Failed to delete reported comment. Please try again.");
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: `Failed to delete report: ${err.response?.data?.message || err.message}`,
+        confirmButtonColor: "#EF4444",
+      });
+    },
+  });
+
+  // Mutation for dismissing a report
+  const { mutate: dismissReport, isLoading: isDismissing } = useMutation({
+    mutationFn: async (reportId) => {
+      const res = await axiosSecure.patch(`/reports/${reportId}/dismiss`);
+      return res.data;
+    },
+    onSuccess: (data) => {
+      Swal.fire({
+        icon: "success",
+        title: "Success!",
+        text: data.message,
+        confirmButtonColor: "#3B82F6",
+      });
+      queryClient.invalidateQueries(["reportedComments"]);
+    },
+    onError: (err) => {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: `Failed to dismiss report: ${err.response?.data?.message || err.message}`,
+        confirmButtonColor: "#EF4444",
+      });
     },
   });
 
   const handleDelete = (id) => {
-    if (window.confirm("Are you sure you want to delete this reported comment?")) {
-      deleteReportedComment(id);
-    }
+    Swal.fire({
+      title: "Are you sure?",
+      text: "This will delete the reported comment and its report.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3B82F6",
+      cancelButtonColor: "#EF4444",
+      confirmButtonText: "Yes, delete",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        deleteReport(id);
+      }
+    });
   };
 
-  // You might also want a mutation for "approving" or dismissing a report without deleting the comment
-  // For example:
-  // const { mutate: dismissReport } = useMutation({
-  //   mutationFn: async (reportId) => {
-  //     const res = await axiosSecure.patch(`/reports/${reportId}/dismiss`);
-  //     return res.data;
-  //   },
-  //   onSuccess: () => {
-  //     alert("Report dismissed!");
-  //     queryClient.invalidateQueries(["reportedComments"]);
-  //   },
-  // });
-  // const handleDismiss = (id) => {
-  //   if (window.confirm("Are you sure you want to dismiss this report?")) {
-  //     dismissReport(id);
-  //   }
-  // };
+  const handleDismiss = (id) => {
+    Swal.fire({
+      title: "Are you sure?",
+      text: "This will mark the report as dismissed without deleting the comment.",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#3B82F6",
+      cancelButtonColor: "#EF4444",
+      confirmButtonText: "Yes, dismiss",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        dismissReport(id);
+      }
+    });
+  };
 
-  if (isLoading) return <div>Loading reported comments...</div>;
-  if (isError) return <div>Error loading reports: {error.message}</div>;
+  if (isLoading) {
+    return (
+      <motion.div
+        className="flex items-center justify-center min-h-screen"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        <span className="loading loading-spinner loading-lg text-primary"></span>
+      </motion.div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <motion.div
+        className="mt-8 text-center text-red-500"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        Error loading reports: {error.message}
+      </motion.div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-3xl font-bold">Reported Comments & Activities</h2>
-
+    <motion.div
+      className="px-6 py-8 space-y-6 shadow-xl bg-gradient-to-br from-base-200 to-base-300 rounded-xl"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">
+        Reported Comments & Activities
+      </h2>
       <div className="overflow-x-auto">
         <table className="table w-full">
           <thead>
             <tr>
-              <th>User</th>
+              <th>Commenter</th>
               <th>Comment</th>
               <th>Post Title</th>
-              <th>Feedback</th> {/* Add Feedback column */}
+              <th>Feedback</th>
+              <th>Reported By</th>
+              <th>Reported At</th>
+              <th>Status</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {reports.length > 0 ? (
-              reports.map(({ _id, commenterEmail, commentText, postTitle, feedback }) => ( // Adjust keys based on your backend
-                <tr key={_id}>
+              reports.map(({ _id, commenterEmail, commentText, postTitle, feedback, reporterEmail, reportedAt, status }, i) => (
+                <motion.tr
+                  key={_id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.1 * i, duration: 0.4 }}
+                >
                   <td>{commenterEmail}</td>
-                  <td>{commentText}</td>
+                  <td className="max-w-xs truncate">{commentText}</td>
                   <td>{postTitle}</td>
-                  <td>{feedback}</td> {/* Display feedback */}
+                  <td>{feedback}</td>
+                  <td>{reporterEmail}</td>
                   <td>
-                    <button className="mr-2 btn btn-sm btn-success">
-                      Approve/Dismiss {/* Reconsider this action */}
+                    {new Date(reportedAt).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </td>
+                  <td>{status}</td>
+                  <td>
+                    <button
+                      className="mr-2 btn btn-sm btn-success"
+                      onClick={() => handleDismiss(_id)}
+                      disabled={isDismissing || status === "dismissed"}
+                    >
+                      Dismiss
                     </button>
                     <button
                       className="btn btn-sm btn-error"
                       onClick={() => handleDelete(_id)}
+                      disabled={isDeleting}
                     >
                       Delete
                     </button>
                   </td>
-                </tr>
+                </motion.tr>
               ))
             ) : (
               <tr>
-                <td colSpan="5" className="text-center">
+                <td colSpan="8" className="text-center">
                   No reported comments.
                 </td>
               </tr>
@@ -110,7 +204,7 @@ const ReportedActivity = () => {
           </tbody>
         </table>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

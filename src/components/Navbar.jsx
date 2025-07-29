@@ -1,13 +1,28 @@
+// Navbar.jsx
 import { useState } from "react";
 import { Link } from "react-router";
 import { FaBell, FaBars, FaTimes } from "react-icons/fa";
 import useAuth from "../hooks/useAuth";
 import { motion, AnimatePresence } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
+import useAxiosSecure from "../hooks/useAxiosSecure";
 
-const Navbar = ({ announcementCount = 0 }) => {
+const Navbar = () => {
   const { user, logOut } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const axiosSecure = useAxiosSecure();
+
+  // Fetch announcement count
+  const { data: announcementCount = 0 } = useQuery({
+    queryKey: ["announcementCount"],
+    queryFn: async () => {
+      const res = await axiosSecure.get("/announcements");
+      return res.data.length;
+    },
+    staleTime: 1000 * 60 * 5,
+    cacheTime: 1000 * 60 * 30,
+  });
 
   const toggleDropdown = () => setDropdownOpen(!dropdownOpen);
   const toggleMobileMenu = () => setMobileMenuOpen(!mobileMenuOpen);
@@ -24,11 +39,12 @@ const Navbar = ({ announcementCount = 0 }) => {
     exit: { x: "100%", opacity: 0, transition: { duration: 0.2, ease: "easeIn" } },
   };
 
-  const backdropVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 0.5, transition: { duration: 0.3 } },
-    exit: { opacity: 0, transition: { duration: 0.2 } },
-  };
+ 
+// const backdropVariants = {
+//   hidden: { opacity: 0 },
+//   visible: { opacity: 0.3, transition: { duration: 0.3 } }, 
+//   exit: { opacity: 0, transition: { duration: 0.2 } },
+// };
 
   const dropdownVariants = {
     hidden: { opacity: 0, scale: 0.95, y: -10 },
@@ -99,8 +115,7 @@ const Navbar = ({ announcementCount = 0 }) => {
         <div className="flex items-center gap-4">
           {/* Notification Icon */}
           <motion.div variants={buttonVariants} whileHover="hover" whileTap="tap">
-            <Link
-              to="/announcements"
+            <div
               className="relative text-xl transition-colors text-base-content hover:text-primary"
               aria-label="Announcements"
             >
@@ -115,7 +130,7 @@ const Navbar = ({ announcementCount = 0 }) => {
                   {announcementCount}
                 </motion.span>
               )}
-            </Link>
+            </div>
           </motion.div>
 
           {/* User Auth */}
@@ -204,63 +219,52 @@ const Navbar = ({ announcementCount = 0 }) => {
       </div>
 
       {/* Mobile Menu Overlay */}
-      <AnimatePresence>
-        {mobileMenuOpen && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              className="fixed inset-0 z-40 bg-black"
-              variants={backdropVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
+      
+<AnimatePresence>
+  {mobileMenuOpen && (
+    <motion.div
+      className="fixed top-0 right-0 z-50 w-3/4 h-full max-w-xs shadow-lg bg-base-100"
+      variants={mobileMenuVariants}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+    >
+      <div className="flex justify-end p-4">
+        <button
+          className="btn btn-ghost btn-circle"
+          onClick={toggleMobileMenu}
+          aria-label="Close mobile menu"
+        >
+          <FaTimes size={20} />
+        </button>
+      </div>
+      <ul className="flex flex-col gap-2 p-4">
+        <li>
+          <motion.div variants={buttonVariants} whileHover="hover" whileTap="tap">
+            <Link
+              to="/"
+              className="block px-4 py-2 transition-colors hover:bg-primary hover:text-base-100"
               onClick={toggleMobileMenu}
-            />
-            {/* Menu */}
-            <motion.div
-              className="fixed top-0 right-0 z-50 w-3/4 h-full max-w-xs shadow-lg bg-base-100"
-              variants={mobileMenuVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
             >
-              <div className="flex justify-end p-4">
-                <button
-                  className="btn btn-ghost btn-circle"
-                  onClick={toggleMobileMenu}
-                  aria-label="Close mobile menu"
-                >
-                  <FaTimes size={20} />
-                </button>
-              </div>
-              <ul className="flex flex-col gap-2 p-4">
-                <li>
-                  <motion.div variants={buttonVariants} whileHover="hover" whileTap="tap">
-                    <Link
-                      to="/"
-                      className="block px-4 py-2 transition-colors hover:bg-primary hover:text-base-100"
-                      onClick={toggleMobileMenu}
-                    >
-                      Home
-                    </Link>
-                  </motion.div>
-                </li>
-                <li>
-                  <motion.div variants={buttonVariants} whileHover="hover" whileTap="tap">
-                    <Link
-                      to="/membership"
-                      className="block px-4 py-2 transition-colors hover:bg-primary hover:text-base-100"
-                      onClick={toggleMobileMenu}
-                    >
-                      Membership
-                    </Link>
-                  </motion.div>
-                </li>
-              </ul>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+              Home
+            </Link>
+          </motion.div>
+        </li>
+        <li>
+          <motion.div variants={buttonVariants} whileHover="hover" whileTap="tap">
+            <Link
+              to="/membership"
+              className="block px-4 py-2 transition-colors hover:bg-primary hover:text-base-100"
+              onClick={toggleMobileMenu}
+            >
+              Membership
+            </Link>
+          </motion.div>
+        </li>
+      </ul>
+    </motion.div>
+  )}
+</AnimatePresence>
     </motion.nav>
   );
 };

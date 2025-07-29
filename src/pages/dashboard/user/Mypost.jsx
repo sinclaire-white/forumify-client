@@ -1,9 +1,8 @@
 
-import { useEffect, useState } from "react";
-
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router";
 import Swal from "sweetalert2";
-import { Fade } from "react-awesome-reveal";
-import { useNavigate } from "react-router"; 
+import { motion } from "framer-motion";
 import useAuth from "../../../hooks/useAuth";
 import useAxiosSecure from "../../../hooks/useAxiosSecure";
 
@@ -11,146 +10,150 @@ const MyPost = () => {
   const { user, loading: authLoading } = useAuth();
   const axiosSecure = useAxiosSecure();
   const navigate = useNavigate();
-  const [myPosts, setMyPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const queryClient = useQueryClient();
 
-  // Function to fetch posts, called on mount and after deletion
-  const fetchMyPosts = async () => {
-  if (!user?.email) {
-    setLoading(false);
-    return;
-  }
-  try {
-    setLoading(true);
-    setError(null);
-    const res = await axiosSecure.get(`/my-posts?email=${user.email}`);
-    setMyPosts(res.data);
-   
-    
-  } catch (err) {
-    console.error("Error fetching my posts:", err);
-    setError("Failed to load your posts. Please try again.");
-    setMyPosts([]); // Clear posts on error
-  } finally {
-    setLoading(false);
-  }
-};
+  const { data: myPosts = [], isLoading, isError, error } = useQuery({
+    queryKey: ["myPosts", user?.email],
+    queryFn: async () => {
+      if (!user?.email) throw new Error("No user email available");
+      const res = await axiosSecure.get(`/my-posts?email=${user.email}`);
+      return res.data;
+    },
+    enabled: !!user?.email && !authLoading,
+  });
 
-  useEffect(() => {
-    if (!authLoading) { // Fetch posts once user authentication is resolved
-      fetchMyPosts();
-    }
-  }, [user?.email, authLoading, axiosSecure]); // Dependencies
+  const { mutate: deletePost } = useMutation({
+    mutationFn: async (postId) => {
+      const res = await axiosSecure.delete(`/posts/${postId}`);
+      return res.data;
+    },
+    onSuccess: (data) => {
+      Swal.fire({
+        icon: "success",
+        title: "Deleted!",
+        text: data.message,
+        confirmButtonColor: "#3B82F6",
+      });
+      queryClient.invalidateQueries(["myPosts"]);
+    },
+    onError: (err) => {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: `Failed to delete post: ${err.response?.data?.message || err.message}`,
+        confirmButtonColor: "#EF4444",
+      });
+    },
+  });
 
-  const handleDeletePost = async (postId) => {
+  const handleDeletePost = (postId) => {
     Swal.fire({
       title: "Are you sure?",
-      text: "You won't be able to revert this! This will also delete all comments on this post.",
+      text: "This will delete the post and all its comments.",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, delete it!"
-    }).then(async (result) => {
+      confirmButtonColor: "#3B82F6",
+      cancelButtonColor: "#EF4444",
+      confirmButtonText: "Yes, delete it!",
+    }).then((result) => {
       if (result.isConfirmed) {
-        try {
-          // Send DELETE request to the backend for the specific post
-          const res = await axiosSecure.delete(`/posts/${postId}`);
-          if (res.data.deletedCount > 0) {
-            Swal.fire(
-              "Deleted!",
-              "Your post has been deleted.",
-              "success"
-            );
-            // Update UI by filtering out the deleted post
-            setMyPosts(myPosts.filter(post => post._id !== postId));
-          } else {
-            Swal.fire("Error", "Failed to delete post.", "error");
-          }
-        } catch (error) {
-          console.error("Error deleting post:", error);
-          Swal.fire("Error", error.response?.data?.message || "Could not delete post. Server error.", "error");
-        }
+        deletePost(postId);
       }
     });
   };
 
-  // Display loading state
-  if (authLoading || loading) {
+  if (authLoading || isLoading) {
     return (
-      <div className="flex items-center justify-center h-full min-h-[50vh]">
+      <motion.div
+        className="flex items-center justify-center min-h-screen"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
         <span className="loading loading-spinner loading-lg text-primary"></span>
-      </div>
+      </motion.div>
     );
   }
 
-  // Display error state
-  if (error) {
+  if (isError) {
     return (
-      <div className="mt-10 text-xl font-semibold text-center text-red-600">
-        <p>{error}</p>
-        <button onClick={fetchMyPosts} className="mt-4 btn btn-primary">Retry</button>
-      </div>
+      <motion.div
+        className="mt-8 text-center text-red-500"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        Error loading posts: {error.message}
+        <button onClick={() => queryClient.refetchQueries(["myPosts"])} className="mt-4 btn btn-primary">Retry</button>
+      </motion.div>
     );
   }
 
   return (
-    <div className="w-full">
-      <Fade direction="down" triggerOnce>
-        <h2 className="mb-8 text-4xl font-bold text-center text-primary-focus">My Posts</h2>
-      </Fade>
+    <motion.div
+      className="px-6 py-8 space-y-6 shadow-xl bg-gradient-to-br from-base-200 to-base-300 rounded-xl"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">
+        My Posts
+      </h2>
       {myPosts.length === 0 ? (
-        <Fade delay={200} triggerOnce>
-          <p className="mt-10 text-xl text-center text-gray-600">You have not created any posts yet.</p>
-        </Fade>
+        <motion.p
+          className="text-lg text-center text-gray-600"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2, duration: 0.4 }}
+        >
+          You have not created any posts yet.
+        </motion.p>
       ) : (
-        <Fade delay={200} triggerOnce>
-          <div className="overflow-x-auto border border-gray-200 rounded-lg shadow-xl">
-            <table className="table table-zebra w-full min-w-[600px]">
-              <thead>
-                <tr className="bg-base-200 text-neutral-content">
-                  <th className="p-4">#</th>
-                  <th className="p-4">Title</th>
-                  <th className="p-4">Votes</th>
-                  <th className="p-4">Comments</th>
-                  <th className="p-4">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {myPosts.map((post, index) => (
-                  <tr key={post._id} className="transition-colors hover:bg-base-200">
-                    <td className="p-4">{index + 1}</td>
-                    <td className="p-4 font-medium text-neutral-content break-words max-w-[250px]">
-                      {post.title}
-                    </td>
-                    <td className="p-4 text-center">
-                      {post.upVote - post.downVote}
-                    </td>
-                    <td className="p-4 text-center">
-                      <button
-                        onClick={() => navigate(`/dashboard/comments/${post._id}`)} // Redirect to comments page
-                        className="text-white transition-all btn btn-sm btn-info hover:btn-active"
-                      >
-                        Comments ({post.commentCount || 0}) {/* Display comment count */}
-                      </button>
-                    </td>
-                    <td className="p-4 text-center">
-                      <button
-                        onClick={() => handleDeletePost(post._id)}
-                        className="text-white transition-all btn btn-sm btn-error hover:btn-active"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Fade>
+        <div className="overflow-x-auto">
+          <table className="table w-full">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Title</th>
+                <th>Votes</th>
+                <th>Comments</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {myPosts.map((post, index) => (
+                <motion.tr
+                  key={post._id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.1 * index, duration: 0.4 }}
+                >
+                  <td>{index + 1}</td>
+                  <td className="max-w-xs truncate">{post.title}</td>
+                  <td className="text-center">{post.upVote - post.downVote}</td>
+                  <td className="text-center">
+                    <button
+                      onClick={() => navigate(`/dashboard/comments/${post._id}`)}
+                      className="btn btn-sm btn-info"
+                    >
+                      Comments ({post.commentCount || 0})
+                    </button>
+                  </td>
+                  <td className="text-center">
+                    <button
+                      onClick={() => handleDeletePost(post._id)}
+                      className="btn btn-sm btn-error"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </motion.tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
-    </div>
+    </motion.div>
   );
 };
 

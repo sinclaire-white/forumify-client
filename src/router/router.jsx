@@ -42,6 +42,14 @@ export const router = createBrowserRouter([
         ),
       },
       {
+      path: "/membership/payment-success",
+      element: (
+        <PrivateRoute>
+          <PaymentSuccess></PaymentSuccess>
+        </PrivateRoute>
+      ),
+    },
+      {
         path: "/post/:id",
         element: (
           <PrivateRoute>
@@ -49,14 +57,7 @@ export const router = createBrowserRouter([
           </PrivateRoute>
         ),
       },
-      {
-        path: "/payment-success",
-        element: (
-          <PrivateRoute>
-            <PaymentSuccess></PaymentSuccess>
-          </PrivateRoute>
-        ),
-      },
+      
     ],
   },
   {

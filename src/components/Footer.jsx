@@ -1,14 +1,15 @@
-import { Link } from "react-router";
+import { Link } from "react-router"; 
+import { FaFacebook, FaTwitter, FaLinkedin } from 'react-icons/fa'; // Import icons
 
 const Footer = () => {
   return (
-    <footer className="bg-base-100 text-base-content border-t border-base-300">
-      <div className="container mx-auto px-4 py-10 grid grid-cols-1 md:grid-cols-3 gap-6">
+    <footer className="border-t bg-base-100 text-base-content border-base-300">
+      <div className="container grid grid-cols-1 gap-6 px-4 py-10 mx-auto md:grid-cols-3">
         {/* Branding */}
         <div>
           <Link
             to="/"
-            className="flex items-center gap-2 font-bold text-lg text-primary"
+            className="flex items-center gap-2 text-lg font-bold text-primary"
           >
             <img
               src="https://i.ibb.co/MjGnyfp/Forumify-logo.png"
@@ -24,7 +25,7 @@ const Footer = () => {
 
         {/* Quick Links */}
         <div>
-          <h4 className="font-semibold mb-2">Quick Links</h4>
+          <h4 className="mb-2 font-semibold">Quick Links</h4>
           <ul className="space-y-1 text-sm">
             <li>
               <Link to="/" className="hover:text-primary">
@@ -51,24 +52,24 @@ const Footer = () => {
 
         {/* Contact Info */}
         <div>
-          <h4 className="font-semibold mb-2">Contact</h4>
+          <h4 className="mb-2 font-semibold">Contact</h4>
           <p className="text-sm">Email: support@forumify.com</p>
           <p className="text-sm">Phone: +880 1234-567890</p>
-          <div className="mt-3 flex flex-wrap gap-3 text-sm">
-            <a href="#" className="hover:text-primary">
-              Facebook
+          <div className="flex flex-wrap gap-3 mt-3 text-2xl"> {/* Increased gap and text size for icons */}
+            <a href="https://www.facebook.com" target="_blank" rel="noopener noreferrer" className="hover:text-primary">
+              <FaFacebook />
             </a>
-            <a href="#" className="hover:text-primary">
-              Twitter
+            <a href="https://www.twitter.com" target="_blank" rel="noopener noreferrer" className="hover:text-primary">
+              <FaTwitter />
             </a>
-            <a href="#" className="hover:text-primary">
-              LinkedIn
+            <a href="https://www.linkedin.com" target="_blank" rel="noopener noreferrer" className="hover:text-primary">
+              <FaLinkedin />
             </a>
           </div>
         </div>
       </div>
 
-      <div className="border-t border-base-300 py-4 text-center text-sm text-base-content/70">
+      <div className="py-4 text-sm text-center border-t border-base-300 text-base-content/70">
         © {new Date().getFullYear()} Forumify. All rights reserved.
       </div>
     </footer>

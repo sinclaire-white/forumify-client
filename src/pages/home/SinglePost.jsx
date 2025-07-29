@@ -1,6 +1,8 @@
 import { useState } from "react"; // Keep useState for newCommentText
 import { useParams, useNavigate } from "react-router";
 import useAxiosSecure from "../../hooks/useAxiosSecure";
+import { motion } from "framer-motion";
+import { IconArrowUp, IconArrowDown } from "@tabler/icons-react";
 import useAuth from "../../hooks/useAuth";
 import { Fade, Slide } from "react-awesome-reveal";
 import Swal from "sweetalert2";
@@ -10,7 +12,7 @@ import {
   FacebookIcon,
   WhatsappIcon,
 } from "react-share";
-import { useQuery, useQueryClient } from "@tanstack/react-query"; // Import useQuery and useQueryClient
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 const SinglePostPage = () => {
   const { id } = useParams();
@@ -163,133 +165,132 @@ const SinglePostPage = () => {
     year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
   }) : 'N/A';
 
-  return (
-    <div className="flex items-start justify-center min-h-screen px-4 py-12 bg-base-200">
-      <Fade triggerOnce>
-        <div className="w-full max-w-4xl p-8 mx-auto border border-gray-300 shadow-2xl card bg-base-100 rounded-xl">
-          {/* Post Details Section */}
-          <Slide direction="down" triggerOnce>
-            <h1 className="mb-8 text-4xl font-extrabold leading-tight text-center md:text-5xl text-primary-focus">
-              {post.title}
-            </h1>
-          </Slide>
+ return (
+  <div className="flex items-start justify-center min-h-screen px-4 py-12 bg-base-200">
+    <Fade triggerOnce>
+      <div className="w-full max-w-4xl p-8 mx-auto border border-gray-300 shadow-2xl card bg-base-100 rounded-xl">
+        {/* Post Details Section */}
+        <Slide direction="down" triggerOnce>
+          <h1 className="mb-8 text-4xl font-extrabold leading-tight text-center md:text-5xl text-primary-focus">
+            {post.title}
+          </h1>
+        </Slide>
 
-          <div className="flex flex-col items-center justify-center mb-6 text-center sm:flex-row sm:text-left">
-            <div className="mb-4 avatar sm:mb-0 sm:mr-6">
-              <div className="w-24 h-24 overflow-hidden rounded-full ring ring-accent ring-offset-base-100 ring-offset-2">
-                <img
-                  src={post.authorPhoto || "https://via.placeholder.com/150"}
-                  alt={post.authorName}
-                  className="object-cover w-full h-full"
-                />
-              </div>
-            </div>
-            <div>
-              <h3 className="text-2xl font-semibold text-neutral-content">{post.authorName}</h3>
-              <p className="text-base text-gray-500">{postDate}</p>
-              <span className="mt-2 font-medium text-white badge badge-lg badge-secondary">{post.tag}</span>
+        <div className="flex flex-col items-center justify-center mb-6 text-center sm:flex-row sm:text-left">
+          <div className="mb-4 avatar sm:mb-0 sm:mr-6">
+            <div className="w-24 h-24 overflow-hidden rounded-full ring ring-accent ring-offset-base-100 ring-offset-2">
+              <img
+                src={post.authorPhoto || "https://via.placeholder.com/150"}
+                alt={post.authorName}
+                className="object-cover w-full h-full"
+              />
             </div>
           </div>
-
-          <Fade delay={300} triggerOnce>
-            <p className="mb-8 text-lg leading-relaxed text-gray-800 whitespace-pre-line">{post.description}</p>
-          </Fade>
-
-          {/* Voting and Share Buttons */}
-          <div className="flex flex-col items-center justify-between gap-6 pt-6 mt-6 border-t border-gray-200 border-dashed sm:flex-row">
-            <div className="flex space-x-6 text-lg font-medium">
-              {/* Upvote Button */}
-              <button
-                onClick={() => handleVote('upvote')}
-                className="text-green-600 transition-colors duration-200 btn btn-ghost hover:text-green-800"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="mr-2 h-7 w-7" viewBox="0 0 24 24" fill="currentColor"><path d="M7 11V13C7 14.11 7.27 15.17 7.78 16.14L6.15 17.77C5.56 16.89 5 15.93 5 14.93V11H7M15 4V10L12 7L9 10V4C9 3.45 9.45 3 10 3H14C14.55 3 15 3.45 15 4M21 12V10L18 7L15 10V12H21Z" /></svg>
-                {post.upVote} Upvotes
-              </button>
-              {/* Downvote Button */}
-              <button
-                onClick={() => handleVote('downvote')}
-                className="text-red-600 transition-colors duration-200 btn btn-ghost hover:text-red-800"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="mr-2 h-7 w-7" viewBox="0 0 24 24" fill="currentColor"><path d="M7 13V11C7 9.89 7.27 8.83 7.78 7.86L6.15 6.23C5.56 7.11 5 8.07 5 9.07V13H7M15 20V14L12 17L9 14V20C9 20.55 9.45 21 10 21H14C14.55 21 15 20.55 15 20M21 12V14L18 17L15 14V12H21Z" /></svg>
-                {post.downVote} Downvotes
-              </button>
-            </div>
-            {/* Share and Back Buttons */}
-            <div className="flex flex-col items-center gap-4 sm:flex-row">
-              {user && ( // Only show share buttons if logged in
-                <div className="flex gap-2">
-                  <FacebookShareButton url={shareUrl} quote={post.title} hashtag={`#${post.tag}`}>
-                    <FacebookIcon size={32} round />
-                  </FacebookShareButton>
-                  <WhatsappShareButton url={shareUrl} title={post.title}>
-                    <WhatsappIcon size={32} round />
-                  </WhatsappShareButton>
-                  {/* Add more share buttons as needed */}
-                </div>
-              )}
-              <button onClick={() => navigate(-1)} className="btn btn-outline btn-info">
-                Back to Posts
-              </button>
-            </div>
-          </div>
-
-          {/* Comment Section */}
-          <div className="pt-8 mt-12 border-t border-gray-200">
-            <h2 className="mb-6 text-3xl font-bold text-center text-secondary">Comments ({comments.length})</h2>
-
-            {/* Comment Input Form */}
-            <Fade delay={100} triggerOnce>
-              <form onSubmit={handleCommentSubmit} className="mb-8">
-                <div className="mb-4 form-control">
-                  <textarea
-                    className="w-full h-24 p-4 text-lg textarea textarea-bordered"
-                    placeholder={user ? "Write your comment here..." : "Login to comment..."}
-                    value={newCommentText}
-                    onChange={(e) => setNewCommentText(e.target.value)}
-                    disabled={!user} // Disable if not logged in
-                  ></textarea>
-                </div>
-                <button type="submit" className="w-full text-lg btn btn-primary" disabled={!user}>
-                  Post Comment
-                </button>
-              </form>
-            </Fade>
-
-            {/* Display Comments */}
-            {comments.length === 0 ? (
-              <Fade delay={200} triggerOnce>
-                <p className="text-lg text-center text-gray-600">No comments yet. Be the first to comment!</p>
-              </Fade>
-            ) : (
-              <div className="space-y-6">
-                {comments.map((comment, index) => (
-                  <Fade key={comment._id || index} delay={index * 50} direction="left" triggerOnce>
-                    <div className="flex items-start p-4 border border-gray-200 rounded-lg shadow-sm bg-base-200">
-                      <div className="mr-4 avatar">
-                        <div className="w-12 h-12 overflow-hidden rounded-full ring ring-neutral ring-offset-base-200 ring-offset-1">
-                          <img
-                            src={comment.authorPhoto || "https://via.placeholder.com/150"}
-                            alt={comment.authorName}
-                            className="object-cover w-full h-full"
-                          />
-                        </div>
-                      </div>
-                      <div className="flex-grow">
-                        <p className="font-semibold text-neutral-content">{comment.authorName}</p>
-                        <p className="mb-2 text-sm text-gray-500">{new Date(comment.createdAt).toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
-                        <p className="leading-relaxed text-gray-800 whitespace-pre-line">{comment.commentText}</p>
-                      </div>
-                    </div>
-                  </Fade>
-                ))}
-              </div>
-            )}
+          <div>
+            <h3 className="text-2xl font-semibold text-neutral-content">{post.authorName}</h3>
+            <p className="text-base text-gray-500">{postDate}</p>
+            <span className="mt-2 font-medium text-white badge badge-lg badge-secondary">{post.tag}</span>
           </div>
         </div>
-      </Fade>
-    </div>
-  );
+
+        <Fade delay={300} triggerOnce>
+          <p className="mb-8 text-lg leading-relaxed text-gray-800 whitespace-pre-line">{post.description}</p>
+        </Fade>
+
+        {/* Voting and Share Buttons */}
+        <div className="flex flex-col items-center justify-between gap-6 pt-6 mt-6 border-t border-gray-200 border-dashed sm:flex-row">
+          <div className="flex space-x-6 text-lg font-medium">
+            {/* Upvote Button */}
+            <button
+              onClick={() => handleVote('upvote')}
+              className="text-green-600 transition-colors duration-200 btn btn-ghost hover:text-green-800"
+            >
+              <IconArrowUp className="w-4 h-4 mr-2 sm:w-5 sm:h-5 text-success" />
+              {post.upVote} Upvotes
+            </button>
+            {/* Downvote Button */}
+            <button
+              onClick={() => handleVote('downvote')}
+              className="text-red-600 transition-colors duration-200 btn btn-ghost hover:text-red-800"
+            >
+              <IconArrowDown className="w-4 h-4 mr-2 sm:w-5 sm:h-5 text-error" />
+              {post.downVote} Downvotes
+            </button>
+          </div>
+          {/* Share and Back Buttons */}
+          <div className="flex flex-col items-center gap-4 sm:flex-row">
+            {user && (
+              <div className="flex gap-2">
+                <FacebookShareButton url={shareUrl} quote={post.title} hashtag={`#${post.tag}`}>
+                  <FacebookIcon size={32} round />
+                </FacebookShareButton>
+                <WhatsappShareButton url={shareUrl} title={post.title}>
+                  <WhatsappIcon size={32} round />
+                </WhatsappShareButton>
+              </div>
+            )}
+            <button onClick={() => navigate(-1)} className="btn btn-outline btn-info">
+              Back to Posts
+            </button>
+          </div>
+        </div>
+
+        {/* Comment Section */}
+        <div className="pt-8 mt-12 border-t border-gray-200">
+          <h2 className="mb-6 text-3xl font-bold text-center text-secondary">Comments ({comments.length})</h2>
+
+          {/* Comment Input Form */}
+          <Fade delay={100} triggerOnce>
+            <form onSubmit={handleCommentSubmit} className="mb-8">
+              <div className="mb-4 form-control">
+                <textarea
+                  className="w-full h-24 p-4 text-lg textarea textarea-bordered"
+                  placeholder={user ? "Write your comment here..." : "Login to comment..."}
+                  value={newCommentText}
+                  onChange={(e) => setNewCommentText(e.target.value)}
+                  disabled={!user}
+                ></textarea>
+              </div>
+              <button type="submit" className="w-full text-lg btn btn-primary" disabled={!user}>
+                Post Comment
+              </button>
+            </form>
+          </Fade>
+
+          {/* Display Comments */}
+          {comments.length === 0 ? (
+            <Fade delay={200} triggerOnce>
+              <p className="text-lg text-center text-gray-600">No comments yet. Be the first to comment!</p>
+            </Fade>
+          ) : (
+            <div className="space-y-6">
+              {comments.map((comment, index) => (
+                <Fade key={comment._id || index} delay={index * 50} direction="left" triggerOnce>
+                  <div className="flex items-start p-4 border border-gray-200 rounded-lg shadow-sm bg-base-200">
+                    <div className="mr-4 avatar">
+                      <div className="w-12 h-12 overflow-hidden rounded-full ring ring-neutral ring-offset-base-200 ring-offset-1">
+                        <img
+                          src={comment.authorPhoto || "https://via.placeholder.com/150"}
+                          alt={comment.authorName}
+                          className="object-cover w-full h-full"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex-grow">
+                      <p className="font-semibold text-neutral-content">{comment.authorName}</p>
+                      <p className="mb-2 text-sm text-gray-500">{new Date(comment.createdAt).toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                      <p className="leading-relaxed text-gray-800 whitespace-pre-line">{comment.commentText}</p>
+                    </div>
+                  </div>
+                </Fade>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </Fade>
+  </div>
+);
 };
 
 export default SinglePostPage;

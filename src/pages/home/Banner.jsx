@@ -1,42 +1,31 @@
-// src/components/Banner.jsx
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { Fade } from "react-awesome-reveal";
-import { IconSearch } from "@tabler/icons-react"; // Remember: npm install @tabler/icons-react
-import useAxios from "../../hooks/useAxios"; // Using useAxios as specified
+import { IconSearch } from "@tabler/icons-react";
+import useAxios from "../../hooks/useAxios";
 
-const Banner = ({ handleSearchSubmit }) => {
+const Banner = ({ handleSearchSubmit, handleTagClick }) => {
   const [localSearchQuery, setLocalSearchQuery] = useState("");
-  const axios = useAxios(); // Initialize your axios instance
+  const axios = useAxios();
 
-  // Fetch popular searches with TanStack Query
+  // Fetch top 3 recent popular searches with TanStack Query
   const { data: popularSearches = [], isLoading } = useQuery({
-    queryKey: ['popularSearches'],
+    queryKey: ["popularSearches"],
     queryFn: async () => {
-      const response = await axios.get("/popular-searches"); // Using useAxios
-      return response.data; // Expecting an array of objects like { _id: "tag_name", count: N }
+      const response = await axios.get("/popular-searches?limit=3&sort=lastSearched");
+      return response.data.filter(search => search._id && typeof search._id === "string");
     },
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000,
     onError: (error) => {
       console.error("Error fetching popular searches:", error);
-    }
+    },
   });
 
   const handleSearch = (e) => {
-      e.preventDefault();
-      if (localSearchQuery.trim()) {
-        handleSearchSubmit(localSearchQuery); // Trigger search in parent (Home.jsx)
-      } else {
-        // Optionally, clear current filter if search input is empty
-        handleSearchSubmit("");
-      }
-  };
-
-  const handleTagClick = (tag) => {
-    setLocalSearchQuery(tag); // Update search input with the tag
-    handleSearchSubmit(tag); // Trigger search in parent (Home.jsx)
+    e.preventDefault();
+    handleSearchSubmit(localSearchQuery);
   };
 
   const handleKeyPress = (e) => {
@@ -50,9 +39,8 @@ const Banner = ({ handleSearchSubmit }) => {
       {/* Background Image/Overlay */}
       <div
         className="absolute inset-0 bg-center bg-cover"
-        style={{ backgroundImage: "url('https://picsum.photos/1920/1080?random=1')" }} // Placeholder image
+        style={{ backgroundImage: "url('https://picsum.photos/1920/1080?random=1')" }}
       >
-        {/* Subtle gradient overlay for better text contrast */}
         <div className="absolute inset-0 bg-gradient-to-t from-base-content/70 via-base-content/50 to-transparent"></div>
       </div>
 
@@ -72,7 +60,7 @@ const Banner = ({ handleSearchSubmit }) => {
           </motion.h1>
         </Fade>
 
-        {/* Search Bar - Absolutely Side-by-Side Design (Confirmed) */}
+        {/* Search Bar */}
         <Fade direction="up" delay={300} triggerOnce>
           <motion.form
             onSubmit={handleSearch}
@@ -87,7 +75,7 @@ const Banner = ({ handleSearchSubmit }) => {
                 placeholder="Search posts by tags..."
                 className="flex-grow py-3 pl-6 pr-2 border-none rounded-l-full rounded-r-none input input-bordered input-lg bg-base-100 text-base-content focus:outline-none focus:ring-0"
                 value={localSearchQuery}
-                onChange={(e) => setLocalSearchQuery(e.target.value)}
+                onChange={(e) => setLocalSearchQuery(e.target.value || "")}
                 onKeyPress={handleKeyPress}
                 aria-label="Search posts"
               />
@@ -105,31 +93,32 @@ const Banner = ({ handleSearchSubmit }) => {
           </motion.form>
         </Fade>
 
-        {/* Popular Searches - Simple Text-like Tags (No Hover) */}
+        {/* Popular Searches - Limited to 3 Recent Tags */}
         {popularSearches.length > 0 && (
           <Fade direction="up" cascade damping={0.1} triggerOnce>
-            <div className="mb-4 text-lg font-semibold text-base-100 drop-shadow-md">Popular Tags:</div>
+            <div className="mb-4 text-lg font-semibold text-base-100 drop-shadow-md">
+              Recent Popular Tags:
+            </div>
             <div className="flex flex-wrap justify-center gap-3">
               <AnimatePresence>
                 {popularSearches.map((search, i) => (
                   <motion.button
                     key={search._id}
                     onClick={() => handleTagClick(search._id)}
-                    className="flex items-center gap-2 px-3 py-1 text-sm font-semibold transition-colors duration-200 border rounded-full text-base-100 border-base-100/30 focus:outline-none focus:ring-2 focus:ring-primary/50 active:scale-95 active:bg-primary/20 active:border-primary" // Subtle active state
+                    className="flex items-center gap-2 px-3 py-1 text-sm font-semibold transition-colors duration-200 border rounded-full text-base-100 border-base-100/30 focus:outline-none focus:ring-2 focus:ring-primary/50 active:scale-95 active:bg-primary/20 active:border-primary"
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.8 }}
                     transition={{
                       delay: i * 0.1,
                       type: "spring",
-                      damping: 10
+                      damping: 10,
                     }}
-                    // whileHover is explicitly removed as requested
                     whileTap={{ scale: 0.95 }}
                     aria-label={`Filter by tag ${search._id}`}
                   >
                     <span>#</span>
-                    {search._id}
+                    <span>{search._id}</span>
                     <span className="font-bold bg-base-100/20 rounded-full px-2 py-0.5 text-base-content/80">
                       {search.count}
                     </span>

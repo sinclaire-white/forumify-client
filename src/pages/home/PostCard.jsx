@@ -1,22 +1,20 @@
-// src/components/PostCard.jsx
-import { useNavigate } from "react-router"; // Using react-router as specified
-import { motion } from "framer-motion"; // For animations
-import { Fade } from "react-awesome-reveal"; // For entry animation
+import { useNavigate } from "react-router";
+import { motion } from "framer-motion";
+import { Fade } from "react-awesome-reveal";
 import {
-  IconArrowUp, // Requires '@tabler/icons-react'
-  IconArrowDown, // Requires '@tabler/icons-react'
-  IconMessageCircle, // Requires '@tabler/icons-react'
-} from "@tabler/icons-react"; // Ensure you have installed @tabler/icons-react
+  IconArrowUp,
+  IconArrowDown,
+  IconMessageCircle,
+} from "@tabler/icons-react";
 
 const PostCard = ({ post }) => {
-  // Destructure with default values for safety
   const {
     _id,
     authorName,
     authorPhoto,
     title,
     description,
-    tag, // Assuming 'tag' is a single string here
+    tag,
     upVote = 0,
     downVote = 0,
     createdAt,
@@ -36,28 +34,26 @@ const PostCard = ({ post }) => {
     : "N/A";
 
   const handleReadMore = () => {
-    navigate(`/post/${_id}`); // Navigate to the single post page
+    navigate(`/post/${_id}`);
   };
 
   return (
     <Fade direction="up" triggerOnce>
       <motion.div
         className="card bg-base-100 shadow-xl border border-base-300 rounded-lg overflow-hidden h-full flex flex-col transform transition-transform duration-300 hover:scale-[1.01] hover:shadow-2xl"
-        // Initial animation for card entry
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        // Subtle scale effect on hover for the entire card
         whileHover={{ scale: 1.01 }}
       >
-        <div className="flex flex-col justify-between p-6 card-body">
+        <div className="flex flex-col justify-between p-4 sm:p-6 card-body">
           {/* Top section: Author info, Title, Description, Tag */}
           <div>
             <div className="flex items-center mb-4">
               <div className="mr-3 avatar">
                 <div className="overflow-hidden rounded-full w-14 h-14 ring ring-primary ring-offset-base-100 ring-offset-2">
                   <img
-                    src={authorPhoto || "https://picsum.photos/100/100?random=user"} // Placeholder
+                    src={authorPhoto || "https://picsum.photos/100/100?random=user"}
                     alt={authorName || "Anonymous"}
                     className="object-cover w-full h-full"
                   />
@@ -90,21 +86,21 @@ const PostCard = ({ post }) => {
           </div>
 
           {/* Bottom section: Engagement and Read More button */}
-          <div className="flex flex-col justify-between gap-4 pt-4 mt-auto border-t sm:flex-row sm:items-center border-base-200">
-            <div className="flex items-center gap-4 text-sm font-medium text-base-content/70">
+          <div className="flex flex-row flex-wrap items-center gap-2 pt-4 mt-auto border-t border-base-200">
+            <div className="flex items-center gap-0.5 sm:gap-1 text-xs sm:text-sm font-medium text-base-content/70">
               {/* Upvotes */}
-              <div className="flex items-center gap-1">
-                <IconArrowUp className="w-5 h-5 text-success" />
+              <div className="flex items-center gap-0.5">
+                <IconArrowUp className="w-4 h-4 sm:w-5 sm:h-5 text-success" />
                 <span>{upVote} Upvotes</span>
               </div>
               {/* Downvotes */}
-              <div className="flex items-center gap-1">
-                <IconArrowDown className="w-5 h-5 text-error" />
+              <div className="flex items-center gap-0.5">
+                <IconArrowDown className="w-4 h-4 sm:w-5 sm:h-5 text-error" />
                 <span>{downVote} Downvotes</span>
               </div>
               {/* Comments Count */}
-              <div className="flex items-center gap-1">
-                <IconMessageCircle className="w-5 h-5 text-info" />
+              <div className="flex items-center gap-0.5">
+                <IconMessageCircle className="w-4 h-4 sm:w-5 sm:h-5 text-info" />
                 <span>{commentCount} Comments</span>
               </div>
             </div>
@@ -112,7 +108,7 @@ const PostCard = ({ post }) => {
             {/* Read More Button */}
             <button
               onClick={handleReadMore}
-              className="px-5 transition-transform duration-200 ease-in-out transform shadow-md btn btn-primary btn-sm hover:scale-105 active:scale-95"
+              className="flex-shrink-0 px-4 py-1 text-sm font-medium transition-transform duration-200 ease-in-out transform btn btn-primary btn-sm hover:scale-105 active:scale-95"
             >
               Read More
             </button>
