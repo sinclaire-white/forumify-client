@@ -19,11 +19,13 @@ import CommentsPage from "../pages/dashboard/user/CommentsPage";
 import PaymentSuccess from "../pages/membership/PaymentSuccess";
 import AdminRoute from "./AdminRoute";
 import Unauthorized from "./Unauthorized";
+import ErrorPage from "../components/ErrorPage";
 
 export const router = createBrowserRouter([
   {
     path: "/",
     Component: RootLayout,
+    errorElement: <ErrorPage></ErrorPage>,
     children: [
       {
         index: true,
