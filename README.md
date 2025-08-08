@@ -18,7 +18,7 @@ Forumify is a full-featured discussion forum built with the MERN stack. Users ca
 
 ## 🛠️ Technologies Used
 
-- **Frontend:** React.js, Tailwind CSS, DaisyUI, React Router, React Hook Form, React Select, React Share, Framer Motion
+- **Frontend:** React.js, Tailwind CSS, DaisyUI, Lightswind UI, React Router, React Hook Form, React Select, React Share, Framer Motion, React Awesome Reveal
 - **Backend:** Node.js, Express.js, MongoDB, Firebase Authentication, JWT for authorization
 - **Others:** TanStack Query for data fetching, Axios for HTTP requests
 
@@ -28,7 +28,7 @@ Forumify is a full-featured discussion forum built with the MERN stack. Users ca
 
 - User registration and login with email/password and social login
 - Role-based private routes for Users and Admins
-- Post creation, search by tags, and sorting by popularity (upvotes - downvotes)
+- Post creation, search by tags, and sorting by popularity & time
 - Commenting system with ability to report comments
 - Membership system awarding Bronze and Gold badges
 - Pagination on homepage posts and user tables
@@ -42,8 +42,6 @@ Forumify is a full-featured discussion forum built with the MERN stack. Users ca
 ## 📸 Screenshots
 
 ![Forumify Homepage](https://i.ibb.co.com/1tmYXh6s/Screenshot-2025-08-08-161151.png)
-
-
 
 ---
 
