@@ -1,4 +1,4 @@
-// src/pages/Unauthorized.jsx
+
 import { Link } from "react-router";
 
 const Unauthorized = () => {

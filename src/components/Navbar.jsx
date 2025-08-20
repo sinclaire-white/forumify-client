@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link } from "react-router";
 import { FaBell, FaBars, FaTimes } from "react-icons/fa";
 import useAuth from "../hooks/useAuth";
+import Swal from "sweetalert2";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosSecure from "../hooks/useAxiosSecure";
@@ -30,21 +31,32 @@ const Navbar = () => {
   // Framer Motion variants for animations
   const navVariants = {
     hidden: { opacity: 0, y: -20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.5, ease: "easeOut" },
+    },
   };
 
   const mobileMenuVariants = {
     hidden: { x: "100%", opacity: 0 },
-    visible: { x: 0, opacity: 1, transition: { duration: 0.3, ease: "easeOut" } },
-    exit: { x: "100%", opacity: 0, transition: { duration: 0.2, ease: "easeIn" } },
+    visible: {
+      x: 0,
+      opacity: 1,
+      transition: { duration: 0.3, ease: "easeOut" },
+    },
+    exit: {
+      x: "100%",
+      opacity: 0,
+      transition: { duration: 0.2, ease: "easeIn" },
+    },
   };
 
- 
-// const backdropVariants = {
-//   hidden: { opacity: 0 },
-//   visible: { opacity: 0.3, transition: { duration: 0.3 } }, 
-//   exit: { opacity: 0, transition: { duration: 0.2 } },
-// };
+  // const backdropVariants = {
+  //   hidden: { opacity: 0 },
+  //   visible: { opacity: 0.3, transition: { duration: 0.3 } },
+  //   exit: { opacity: 0, transition: { duration: 0.2 } },
+  // };
 
   const dropdownVariants = {
     hidden: { opacity: 0, scale: 0.95, y: -10 },
@@ -93,14 +105,22 @@ const Navbar = () => {
         {/* Center: Navigation Links (Desktop) */}
         <ul className="hidden gap-6 font-semibold md:flex">
           <li>
-            <motion.div variants={buttonVariants} whileHover="hover" whileTap="tap">
+            <motion.div
+              variants={buttonVariants}
+              whileHover="hover"
+              whileTap="tap"
+            >
               <Link to="/" className="transition-colors hover:text-primary">
                 Home
               </Link>
             </motion.div>
           </li>
           <li>
-            <motion.div variants={buttonVariants} whileHover="hover" whileTap="tap">
+            <motion.div
+              variants={buttonVariants}
+              whileHover="hover"
+              whileTap="tap"
+            >
               <Link
                 to="/membership"
                 className="transition-colors hover:text-primary"
@@ -114,7 +134,11 @@ const Navbar = () => {
         {/* Right: Notification + Auth Buttons + Mobile Menu Toggle */}
         <div className="flex items-center gap-4">
           {/* Notification Icon */}
-          <motion.div variants={buttonVariants} whileHover="hover" whileTap="tap">
+          <motion.div
+            variants={buttonVariants}
+            whileHover="hover"
+            whileTap="tap"
+          >
             <div
               className="relative text-xl transition-colors text-base-content hover:text-primary"
               aria-label="Announcements"
@@ -191,8 +215,31 @@ const Navbar = () => {
                       <button
                         className="w-full px-4 py-2 text-left transition-colors hover:bg-primary hover:text-base-100"
                         onClick={() => {
-                          logOut();
-                          setDropdownOpen(false);
+                          Swal.fire({
+                            title: "Are you sure?",
+                            text: "You will be logged out!",
+                            icon: "warning",
+                            showCancelButton: true,
+                            confirmButtonColor: "#3085d6",
+                            cancelButtonColor: "#d33",
+                            confirmButtonText: "Yes, logout!",
+                            background: "#1f2937", // Tailwind's base-100 (adjust if needed)
+                            color: "#e5e7eb", // Tailwind's base-content
+                          }).then((result) => {
+                            if (result.isConfirmed) {
+                              logOut();
+                              setDropdownOpen(false);
+                              Swal.fire({
+                                title: "Logged Out!",
+                                text: "You have been logged out successfully.",
+                                icon: "success",
+                                timer: 1500,
+                                showConfirmButton: false,
+                                background: "#1f2937",
+                                color: "#e5e7eb",
+                              });
+                            }
+                          });
                         }}
                       >
                         Logout
@@ -219,52 +266,60 @@ const Navbar = () => {
       </div>
 
       {/* Mobile Menu Overlay */}
-      
-<AnimatePresence>
-  {mobileMenuOpen && (
-    <motion.div
-      className="fixed top-0 right-0 z-50 w-3/4 h-full max-w-xs shadow-lg bg-base-100"
-      variants={mobileMenuVariants}
-      initial="hidden"
-      animate="visible"
-      exit="exit"
-    >
-      <div className="flex justify-end p-4">
-        <button
-          className="btn btn-ghost btn-circle"
-          onClick={toggleMobileMenu}
-          aria-label="Close mobile menu"
-        >
-          <FaTimes size={20} />
-        </button>
-      </div>
-      <ul className="flex flex-col gap-2 p-4">
-        <li>
-          <motion.div variants={buttonVariants} whileHover="hover" whileTap="tap">
-            <Link
-              to="/"
-              className="block px-4 py-2 transition-colors hover:bg-primary hover:text-base-100"
-              onClick={toggleMobileMenu}
-            >
-              Home
-            </Link>
+
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            className="fixed top-0 right-0 z-50 w-3/4 h-full max-w-xs shadow-lg bg-base-100"
+            variants={mobileMenuVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+          >
+            <div className="flex justify-end p-4">
+              <button
+                className="btn btn-ghost btn-circle"
+                onClick={toggleMobileMenu}
+                aria-label="Close mobile menu"
+              >
+                <FaTimes size={20} />
+              </button>
+            </div>
+            <ul className="flex flex-col gap-2 p-4">
+              <li>
+                <motion.div
+                  variants={buttonVariants}
+                  whileHover="hover"
+                  whileTap="tap"
+                >
+                  <Link
+                    to="/"
+                    className="block px-4 py-2 transition-colors hover:bg-primary hover:text-base-100"
+                    onClick={toggleMobileMenu}
+                  >
+                    Home
+                  </Link>
+                </motion.div>
+              </li>
+              <li>
+                <motion.div
+                  variants={buttonVariants}
+                  whileHover="hover"
+                  whileTap="tap"
+                >
+                  <Link
+                    to="/membership"
+                    className="block px-4 py-2 transition-colors hover:bg-primary hover:text-base-100"
+                    onClick={toggleMobileMenu}
+                  >
+                    Membership
+                  </Link>
+                </motion.div>
+              </li>
+            </ul>
           </motion.div>
-        </li>
-        <li>
-          <motion.div variants={buttonVariants} whileHover="hover" whileTap="tap">
-            <Link
-              to="/membership"
-              className="block px-4 py-2 transition-colors hover:bg-primary hover:text-base-100"
-              onClick={toggleMobileMenu}
-            >
-              Membership
-            </Link>
-          </motion.div>
-        </li>
-      </ul>
-    </motion.div>
-  )}
-</AnimatePresence>
+        )}
+      </AnimatePresence>
     </motion.nav>
   );
 };

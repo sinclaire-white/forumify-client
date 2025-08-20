@@ -20,6 +20,9 @@ import PaymentSuccess from "../pages/membership/PaymentSuccess";
 import AdminRoute from "./AdminRoute";
 import Unauthorized from "./Unauthorized";
 import ErrorPage from "../components/ErrorPage";
+import About from "../components/About";
+import Faq from "../components/Faq";
+
 
 export const router = createBrowserRouter([
   {
@@ -30,6 +33,14 @@ export const router = createBrowserRouter([
       {
         index: true,
         Component: Home,
+      },
+      {
+        path: "/about",
+        Component: About
+      },
+      {
+        path: "/faq",
+        Component: Faq
       },
       {
         path: "/unauthorized", 
