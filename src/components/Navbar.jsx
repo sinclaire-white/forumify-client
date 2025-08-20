@@ -52,12 +52,6 @@ const Navbar = () => {
     },
   };
 
-  // const backdropVariants = {
-  //   hidden: { opacity: 0 },
-  //   visible: { opacity: 0.3, transition: { duration: 0.3 } },
-  //   exit: { opacity: 0, transition: { duration: 0.2 } },
-  // };
-
   const dropdownVariants = {
     hidden: { opacity: 0, scale: 0.95, y: -10 },
     visible: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.2 } },
@@ -78,6 +72,24 @@ const Navbar = () => {
     },
     tap: { scale: 0.95 },
   };
+
+  const loggedOutNavLinks = (
+    <>
+      <li><Link to="/" className="transition-colors hover:text-primary">Home</Link></li>
+      <li><Link to="/about" className="transition-colors hover:text-primary">About</Link></li>
+      <li><Link to="/faq" className="transition-colors hover:text-primary">FAQ</Link></li>
+      <li><Link to="/contact-us" className="transition-colors hover:text-primary">Contact Us</Link></li>
+    </>
+  );
+
+  const loggedInNavLinks = (
+    <>
+      <li><Link to="/" className="transition-colors hover:text-primary">Home</Link></li>
+      <li><Link to="/dashboard/add-post" className="transition-colors hover:text-primary">Create Post</Link></li>
+      <li><Link to="/dashboard/my-posts" className="transition-colors hover:text-primary">Manage Post</Link></li>
+      <li><Link to="/membership" className="transition-colors hover:text-primary">Membership</Link></li>
+    </>
+  );
 
   return (
     <motion.nav
@@ -104,31 +116,7 @@ const Navbar = () => {
 
         {/* Center: Navigation Links (Desktop) */}
         <ul className="hidden gap-6 font-semibold md:flex">
-          <li>
-            <motion.div
-              variants={buttonVariants}
-              whileHover="hover"
-              whileTap="tap"
-            >
-              <Link to="/" className="transition-colors hover:text-primary">
-                Home
-              </Link>
-            </motion.div>
-          </li>
-          <li>
-            <motion.div
-              variants={buttonVariants}
-              whileHover="hover"
-              whileTap="tap"
-            >
-              <Link
-                to="/membership"
-                className="transition-colors hover:text-primary"
-              >
-                Membership
-              </Link>
-            </motion.div>
-          </li>
+          {user ? loggedInNavLinks : loggedOutNavLinks}
         </ul>
 
         {/* Right: Notification + Auth Buttons + Mobile Menu Toggle */}
@@ -223,8 +211,8 @@ const Navbar = () => {
                             confirmButtonColor: "#3085d6",
                             cancelButtonColor: "#d33",
                             confirmButtonText: "Yes, logout!",
-                            background: "#1f2937", // Tailwind's base-100 (adjust if needed)
-                            color: "#e5e7eb", // Tailwind's base-content
+                            background: "#1f2937",
+                            color: "#e5e7eb",
                           }).then((result) => {
                             if (result.isConfirmed) {
                               logOut();
@@ -266,7 +254,6 @@ const Navbar = () => {
       </div>
 
       {/* Mobile Menu Overlay */}
-
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
@@ -286,36 +273,7 @@ const Navbar = () => {
               </button>
             </div>
             <ul className="flex flex-col gap-2 p-4">
-              <li>
-                <motion.div
-                  variants={buttonVariants}
-                  whileHover="hover"
-                  whileTap="tap"
-                >
-                  <Link
-                    to="/"
-                    className="block px-4 py-2 transition-colors hover:bg-primary hover:text-base-100"
-                    onClick={toggleMobileMenu}
-                  >
-                    Home
-                  </Link>
-                </motion.div>
-              </li>
-              <li>
-                <motion.div
-                  variants={buttonVariants}
-                  whileHover="hover"
-                  whileTap="tap"
-                >
-                  <Link
-                    to="/membership"
-                    className="block px-4 py-2 transition-colors hover:bg-primary hover:text-base-100"
-                    onClick={toggleMobileMenu}
-                  >
-                    Membership
-                  </Link>
-                </motion.div>
-              </li>
+              {user ? loggedInNavLinks : loggedOutNavLinks}
             </ul>
           </motion.div>
         )}

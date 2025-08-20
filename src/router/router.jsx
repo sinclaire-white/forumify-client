@@ -22,6 +22,7 @@ import Unauthorized from "./Unauthorized";
 import ErrorPage from "../components/ErrorPage";
 import About from "../components/About";
 import Faq from "../components/Faq";
+import Contact from "../components/Contact";
 
 
 export const router = createBrowserRouter([
@@ -41,6 +42,10 @@ export const router = createBrowserRouter([
       {
         path: "/faq",
         Component: Faq
+      },
+      {
+        path: "/contact-us",
+        Component: Contact
       },
       {
         path: "/unauthorized", 
