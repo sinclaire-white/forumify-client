@@ -6,13 +6,14 @@ import Swal from "sweetalert2";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosSecure from "../hooks/useAxiosSecure";
+import ThemeToggle from "./ThemeToggle"; // Import your separate ThemeToggle component
 
 const Navbar = () => {
   const { user, logOut } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const axiosSecure = useAxiosSecure();
-  const location = useLocation(); // ✅ Get current path
+  const location = useLocation();
 
   // Fetch announcement count
   const { data: announcementCount = 0 } = useQuery({
@@ -56,7 +57,6 @@ const Navbar = () => {
     tap: { scale: 0.95 },
   };
 
-  // Function to add active styling
   const linkClass = (path) =>
     `transition-colors px-2 py-1 rounded-md font-semibold ${
       location.pathname === path ? "text-primary border-b-2 border-primary" : "text-base-content hover:text-primary"
@@ -100,8 +100,13 @@ const Navbar = () => {
           {user ? loggedInNavLinks : loggedOutNavLinks}
         </ul>
 
-        {/* Right: Notification + Auth Buttons + Mobile Menu Toggle */}
+        {/* Right: Theme Toggle, Notification, Auth Buttons, Mobile Menu Toggle */}
         <div className="flex items-center gap-4">
+          {/* Theme Toggle for desktop view */}
+          <div className="hidden md:block">
+            <ThemeToggle />
+          </div>
+
           {/* Notification Icon */}
           <motion.div variants={buttonVariants} whileHover="hover" whileTap="tap">
             <div className="relative text-xl transition-colors text-base-content hover:text-primary" aria-label="Announcements">
@@ -190,10 +195,12 @@ const Navbar = () => {
         {mobileMenuOpen && (
           <motion.div className="fixed top-0 right-0 z-50 w-3/4 h-full max-w-xs shadow-lg bg-base-100"
             variants={mobileMenuVariants} initial="hidden" animate="visible" exit="exit">
-            <div className="flex justify-end p-4">
+            <div className="flex items-center justify-between p-4">
               <button className="btn btn-ghost btn-circle" onClick={toggleMobileMenu} aria-label="Close mobile menu">
                 <FaTimes size={20} />
               </button>
+              {/* Add Theme Toggle to the mobile menu header */}
+              <ThemeToggle />
             </div>
             <ul className="flex flex-col gap-2 p-4">
               {user ? loggedInNavLinks : loggedOutNavLinks}
