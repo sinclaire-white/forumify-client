@@ -1,8 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import useAxios from "../../hooks/useAxios";
-import PostCard from "./PostCard";
 import { Fade } from "react-awesome-reveal";
-import { Link } from "react-router";
+import PostCard from "./PostCard";
 
 const TrendingPosts = () => {
   const axiosPublic = useAxios();
@@ -10,8 +9,9 @@ const TrendingPosts = () => {
   const { data: trendingPosts = [], isLoading, isError } = useQuery({
     queryKey: ["trendingPosts"],
     queryFn: async () => {
-      const res = await axiosPublic.get("/posts?sort=popularity&limit=3");
-      return res.data.posts;
+      // Assuming a new API endpoint to get trending posts by comment count
+      const res = await axiosPublic.get("/trending-posts"); 
+      return res.data;
     },
     staleTime: 1000 * 60 * 5,
   });
@@ -29,23 +29,18 @@ const TrendingPosts = () => {
   }
 
   return (
-    <section className="mt-12">
+    <section className="mb-8">
       <Fade triggerOnce>
-        <h2 className="mb-8 text-3xl font-bold text-center sm:text-4xl text-primary">
+        <h2 className="mb-6 text-3xl font-bold text-center sm:text-4xl text-primary">
           Trending Posts
         </h2>
       </Fade>
-      <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-        {trendingPosts.map((post) => (
-          <PostCard key={post._id} post={post} />
-        ))}
-      </div>
-      <div className="mt-10 text-center">
-        <Link to="/posts">
-          <button className="btn btn-outline btn-primary">
-            View All Posts
-          </button>
-        </Link>
+      <div>
+        <div className="flex flex-col gap-8">
+          {trendingPosts.map((post) => (
+            <PostCard key={post._id} post={post} />
+          ))}
+        </div>
       </div>
     </section>
   );

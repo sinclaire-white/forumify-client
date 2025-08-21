@@ -52,7 +52,7 @@ const NewsletterSubscription = () => {
               placeholder="Enter your email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full max-w-sm input input-bordered input-lg text-base-content"
+              className="w-full max-w-sm input input-lg text-base-content"
               required
             />
             <button

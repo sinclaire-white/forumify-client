@@ -1,15 +1,27 @@
 import { useQuery } from "@tanstack/react-query";
 import useAxios from "../../hooks/useAxios";
 import { Fade } from "react-awesome-reveal";
+import CountUp from "react-countup";
+import { useInView } from "react-intersection-observer";
 
-const StatCard = ({ title, value }) => (
-  <div className="shadow-md stats bg-base-100/50">
-    <div className="stat">
-      <div className="stat-title text-base-content/60">{title}</div>
-      <div className="stat-value text-primary">{value}</div>
+const StatCard = ({ title, value }) => {
+  const { ref, inView } = useInView({
+    triggerOnce: true,
+    threshold: 0.3, // start counting when 30% of card is visible
+  });
+
+  return (
+    <div
+      ref={ref}
+      className="flex flex-col items-center justify-between h-full p-6 text-center rounded-lg shadow-md bg-base-100"
+    >
+      <p className="text-sm font-medium text-base-content/70">{title}</p>
+      <h3 className="mt-2 text-2xl font-bold text-primary">
+        {inView ? <CountUp end={value} duration={1.5} separator="," /> : 0}
+      </h3>
     </div>
-  </div>
-);
+  );
+};
 
 const PlatformStats = () => {
   const axiosPublic = useAxios();
@@ -32,17 +44,26 @@ const PlatformStats = () => {
   }
 
   if (isError || !stats) {
-    return null;
+    return (
+      <section className="p-6 shadow-inner bg-base-200/50 rounded-xl">
+        <h2 className="mb-8 text-3xl font-bold text-center sm:text-4xl text-primary">
+          Platform Stats
+        </h2>
+        <div className="p-4 text-center text-red-500 bg-red-100 border border-red-300 rounded-md">
+          <p>Failed to load platform stats. Please try again later.</p>
+        </div>
+      </section>
+    );
   }
 
   return (
-    <section className="mt-12">
+    <section className="p-6 shadow-inner bg-base-200/50 rounded-xl">
       <Fade triggerOnce>
         <h2 className="mb-8 text-3xl font-bold text-center sm:text-4xl text-primary">
           Platform Stats
         </h2>
       </Fade>
-      <div className="flex flex-col items-center justify-center gap-4 md:flex-row">
+      <div className="grid items-stretch grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
         <StatCard title="Total Posts" value={stats.totalPosts} />
         <StatCard title="Total Users" value={stats.totalUsers} />
         <StatCard title="Total Comments" value={stats.totalComments} />
