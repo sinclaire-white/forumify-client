@@ -1,16 +1,16 @@
 import { Link, useNavigate } from "react-router";
 import { useForm } from "react-hook-form";
 import useAuth from "../../hooks/useAuth";
-import useAxios from "../../hooks/useAxios"; 
-import useAxiosSecure from "../../hooks/useAxiosSecure"; 
+import useAxios from "../../hooks/useAxios";
+import useAxiosSecure from "../../hooks/useAxiosSecure";
 import Swal from "sweetalert2";
-import { FaHome } from "react-icons/fa"; // <-- Home icon
+import { FaHome } from "react-icons/fa"; 
 
 const Login = () => {
   const { loginUser, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
-  const axios = useAxios(); 
-  const axiosSecure = useAxiosSecure(); 
+  const axios = useAxios();
+  const axiosSecure = useAxiosSecure();
 
   const {
     register,
@@ -18,17 +18,26 @@ const Login = () => {
     formState: { errors },
   } = useForm({
     defaultValues: {
-      email: '',
-      password: '',
-    }
+      email: "",
+      password: "",
+    },
   });
 
   const onSubmit = async (data) => {
     try {
+      // 1. Login with Firebase
       const result = await loginUser(data.email, data.password);
+
+      // 2. Get Firebase ID token
       const idToken = await result.user.getIdToken();
+
+      // 3. Exchange for JWT (use public axios for this initial JWT exchange, or use axiosSecure after token is set)
+
       const jwtRes = await axios.post("/jwt", { token: idToken });
+
+      // 4. Store JWT in localStorage
       localStorage.setItem("access-token", jwtRes.data.token);
+
       Swal.fire({
         icon: "success",
         title: "Logged in!",
@@ -39,12 +48,14 @@ const Login = () => {
       navigate("/");
     } catch (err) {
       console.error("Login error:", err);
+
       let errorMessage = "Login failed! Please check your credentials.";
-      if (err.code === 'auth/invalid-credential') {
+      if (err.code === "auth/invalid-credential") {
         errorMessage = "Invalid email or password. Please try again.";
       } else if (err.message) {
         errorMessage = err.message;
       }
+
       Swal.fire({
         icon: "error",
         title: "Login Failed",
@@ -55,21 +66,45 @@ const Login = () => {
 
   const handleGoogleLogin = async () => {
     try {
+      // 1. Login with Google
       const result = await signInWithGoogle();
+
+      // 2. Get Firebase ID token and exchange for JWT IMMEDIATELY
+      // This call doesn't require JWT, so `axios` (the public one) is fine.
       const idToken = await result.user.getIdToken();
       const jwtRes = await axios.post("/jwt", { token: idToken });
+
+      // 3. Store JWT in localStorage BEFORE making any authenticated requests
       localStorage.setItem("access-token", jwtRes.data.token);
+      // console.log("JWT token set in localStorage:", localStorage.getItem("access-token")); // Debugging line
+
       const name = result.user.displayName || "Google User";
-      const photoURL = result.user.photoURL || "https://via.placeholder.com/150";
-      const userData = { name, email: result.user.email, photo: photoURL, role: "user", badge: "bronze" };
-      const checkUserResponse = await axios.get(`/users/check-email?email=${result.user.email}`);
+      const photoURL =
+        result.user.photoURL || "https://via.placeholder.com/150";
+
+      const userData = {
+        name: name,
+        email: result.user.email,
+        photo: photoURL,
+        role: "user",
+        badge: "bronze", // Default badge for new users
+      };
+
+      // 4. Now, check user existence and save/update.
+
+      const checkUserResponse = await axios.get(
+        `/users/check-email?email=${result.user.email}`
+      );
       if (checkUserResponse.data.exists) {
-        await axiosSecure.patch(`/users/${checkUserResponse.data.user._id}`, { 
-          name, photo: photoURL, badge: checkUserResponse.data.user.badge || "bronze"
+        await axiosSecure.patch(`/users/${checkUserResponse.data.user._id}`, {
+          name: name,
+          photo: photoURL,
+          badge: checkUserResponse.data.user.badge || "bronze",
         });
       } else {
         await axios.post("/users", userData);
       }
+
       Swal.fire({
         icon: "success",
         title: "Logged in!",
@@ -80,28 +115,35 @@ const Login = () => {
       navigate("/");
     } catch (err) {
       console.error("Google Login Error:", err);
-      let errorMessage = err.message || "Google login failed!";
-      Swal.fire({ icon: "error", title: "Login Failed", text: errorMessage });
+      let errorMessage = "Google login failed!";
+      if (err.message) {
+        errorMessage = err.message;
+      }
+      Swal.fire({
+        icon: "error",
+        title: "Login Failed",
+        text: errorMessage,
+      });
     }
   };
 
   return (
-    <div className="relative flex items-center justify-center min-h-screen bg-base-200">
-      {/* Home Button */}
-      <button
-        onClick={() => navigate("/")}
-        className="absolute text-white top-4 left-4 btn btn-circle btn-sm bg-primary hover:bg-primary-focus"
-        title="Go Home"
-      >
-        <FaHome className="w-5 h-5" />
-      </button>
-
+    <div className="flex items-center justify-center min-h-screen bg-base-200">
       <div className="w-full max-w-md shadow-xl card bg-base-100">
         <div className="card-body">
-          <h2 className="mb-4 text-2xl font-bold text-center">Login to Forumify</h2>
+          {/* Home Button */}
+          <Link
+            to="/"
+            className="absolute transition-colors duration-200 btn btn-sm btn-ghost top-4 right-4 text-base-content/70 hover:text-primary"
+          >
+            <FaHome className="w-6 h-6" />
+          </Link>
 
+          <h2 className="mb-4 text-2xl font-bold text-center">
+            Login to Forumify
+          </h2>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            {/* Email Field */}
+            {/* Email Field with Floating Label */}
             <div className="relative w-full">
               <input
                 type="email"
@@ -112,16 +154,21 @@ const Login = () => {
               />
               <label
                 htmlFor="login-email"
-                className="absolute left-3 -top-2.5 px-1 text-sm text-gray-500 transition-all z-10 bg-base-100
-                  peer-placeholder-shown:top-3 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400
-                  peer-focus:-top-2.5 peer-focus:text-sm peer-focus:text-primary"
+                className="absolute left-3 -top-2.5 px-1 text-sm text-gray-500
+        transition-all z-10 bg-base-100
+        peer-placeholder-shown:top-3 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400
+        peer-focus:-top-2.5 peer-focus:text-sm peer-focus:text-primary"
               >
                 Email
               </label>
             </div>
-            {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email.message}</p>}
+            {errors.email && (
+              <p className="mt-1 text-sm text-red-500">
+                {errors.email.message}
+              </p>
+            )}
 
-            {/* Password Field */}
+            {/* Password Field with Floating Label */}
             <div className="relative w-full">
               <input
                 type="password"
@@ -132,23 +179,41 @@ const Login = () => {
               />
               <label
                 htmlFor="login-password"
-                className="absolute left-3 -top-2.5 px-1 text-sm text-gray-500 transition-all z-10 bg-base-100
-                  peer-placeholder-shown:top-3 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400
-                  peer-focus:-top-2.5 peer-focus:text-sm peer-focus:text-primary"
+                className="absolute left-3 -top-2.5 px-1 text-sm text-gray-500
+        transition-all z-10 bg-base-100
+        peer-placeholder-shown:top-3 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400
+        peer-focus:-top-2.5 peer-focus:text-sm peer-focus:text-primary"
               >
                 Password
               </label>
             </div>
-            {errors.password && <p className="mt-1 text-sm text-red-500">{errors.password.message}</p>}
+            {errors.password && (
+              <p className="mt-1 text-sm text-red-500">
+                {errors.password.message}
+              </p>
+            )}
 
-            <button type="submit" className="w-full mt-6 btn btn-primary">Login</button>
+            <button
+              type="submit"
+              className="w-full mt-6 btn btn-outline btn-primary hover:bg-primary hover:text-white"
+            >
+              Login
+            </button>
           </form>
 
           <div className="divider">OR</div>
-          <button onClick={handleGoogleLogin} className="w-full btn btn-outline">Continue with Google</button>
+          <button
+            onClick={handleGoogleLogin}
+            className="w-full btn btn-outline btn-primary hover:bg-primary hover:text-white"
+          >
+            Continue with Google
+          </button>
 
           <p className="mt-2 text-sm text-center">
-            New here? <Link to="/register" className="text-primary hover:underline">Register</Link>
+            New here?{" "}
+            <Link to="/register" className="text-primary hover:underline">
+              Register
+            </Link>
           </p>
         </div>
       </div>
