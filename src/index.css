@@ -18,21 +18,19 @@
   --color-accent: #FF9640;
   --color-neutral: #FFEEE0;
   --color-info: #FFDCC0;
-  --color-base-100: #FFFFFF;
-  --color-base-content: #000000;
+
 }
 
 /* Dark Theme */
 @plugin "daisyui/theme" {
   name: "dark";
 
-  --color-primary: #A3DCF5;
-  --color-secondary: #4D90A3;
-  --color-accent: #4C8550;
-  --color-neutral: #5E9E88;
-  --color-info: #2F6B35;
-  --color-base-100: #1A1A1A;
-  --color-base-content: #F5F5F5;
+  --color-primary: #FF7300;
+  --color-secondary: #3FCCF2;
+  --color-accent: #FF9640;
+  --color-neutral: #FFEEE0;
+  --color-info: #FFDCC0;
+  
 }
 
 

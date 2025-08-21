@@ -46,8 +46,8 @@ const Announcements = () => {
               )}
               <h4 className="text-lg font-semibold text-base-content">{note.title}</h4>
             </div>
-            <p className="leading-relaxed text-gray-700">{note.description}</p>
-            <p className="mt-2 text-xs text-gray-500">
+            <p className="leading-relaxed text-base-content/80">{note.description}</p>
+            <p className="mt-2 text-xs text-base-content/60">
               By <span className="font-medium text-base-content">{note.authorName || "Site Admin"}</span> •{" "}
               {new Date(note.createdAt || Date.now()).toLocaleDateString("en-US", {
                 year: "numeric",

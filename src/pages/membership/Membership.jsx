@@ -91,18 +91,21 @@ const Membership = () => {
             <p className="text-lg text-gray-600">
               🎉 You are already a Gold Member! Enjoy unlimited posting and your exclusive Gold Badge.
             </p>
-            <button
-              className="px-8 text-lg btn btn-primary btn-lg"
-              disabled
-            >
-              Already a Member
-            </button>
-            <button
-              onClick={() => navigate("/dashboard/add-post")}
-              className="px-8 text-lg btn btn-success btn-lg"
-            >
-              Create a New Post
-            </button>
+            {/* Fix: Added flexbox to align buttons horizontally with space-x for spacing */}
+            <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
+              <button
+                className="px-8 text-lg btn btn-neutral btn-lg"
+                disabled
+              >
+                Already a Member
+              </button>
+              <button
+                onClick={() => navigate("/dashboard/add-post")}
+                className="px-8 text-lg btn btn-success btn-lg"
+              >
+                Create a New Post
+              </button>
+            </div>
           </div>
         ) : (
           <div className="space-y-4">
