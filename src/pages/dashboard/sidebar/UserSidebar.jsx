@@ -3,8 +3,8 @@ import { FiUser, FiPlusSquare, FiList } from "react-icons/fi";
 
 const UserSidebar = ({ closeSidebar }) => {
   const linkClass = ({ isActive }) =>
-    `flex items-center gap-2 px-4 py-3 rounded-lg hover:bg-blue-100 transition-colors ${
-      isActive ? "bg-blue-200 font-semibold" : ""
+    `flex items-center gap-2 px-4 py-3 rounded-lg hover:bg-primary transition-colors ${
+      isActive ? "bg-primary font-semibold" : ""
     }`;
 
   return (
