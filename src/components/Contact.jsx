@@ -7,34 +7,12 @@ const Contact = () => {
   const { register, handleSubmit, formState: { errors }, reset } = useForm();
 
   const onSubmit = (data) => {
-    // This is where you would normally send the data to your backend API.
-    // Since you don't have a contact endpoint, this part is commented out.
-
-    // Example of a backend call:
-    // axios.post('YOUR_API_ENDPOINT/contact', data)
-    //   .then(res => {
-    //     Swal.fire({
-    //       icon: 'success',
-    //       title: 'Message Sent!',
-    //       text: 'Thank you for your message. We will get back to you soon.',
-    //     });
-    //     reset();
-    //   })
-    //   .catch(err => {
-    //     Swal.fire({
-    //       icon: 'error',
-    //       title: 'Oops...',
-    //       text: 'Something went wrong. Please try again later.',
-    //     });
-    //   });
-
-    // We'll just show a success alert and reset the form for now.
     Swal.fire({
       icon: 'success',
       title: 'Message Sent!',
       text: 'Thank you for your message. We will get back to you soon.',
     });
-    
+
     reset();
   };
 
@@ -42,27 +20,30 @@ const Contact = () => {
     <div className="min-h-screen py-16 bg-base-200">
       <div className="container px-4 mx-auto md:px-8">
         <div className="mb-12 text-center">
-          <h1 className="text-4xl font-bold md:text-5xl text-neutral">Contact Us</h1>
-          <p className="max-w-3xl mx-auto mt-4 text-lg text-neutral-content">
+          <h1 className="text-4xl font-bold md:text-5xl text-primary">Contact Us</h1>
+         
+          <p className="max-w-3xl mx-auto mt-4 text-base-content">
             We'd love to hear from you. Your feedback is what helps us make Forumify a better place for everyone.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-12 p-8 bg-white shadow-lg lg:grid-cols-2 md:p-12 rounded-xl">
+        <div className="grid grid-cols-1 gap-12 p-8 shadow-lg bg-base-300 lg:grid-cols-2 md:p-12 rounded-xl">
           {/* Contact Information Section */}
           <div className="space-y-6">
-            <h2 className="text-3xl font-bold text-neutral">Get in touch</h2>
-            <p className="text-neutral-content">
+            <h2 className="text-3xl font-bold text-primary">Get in touch</h2>
+            
+            <p className="text-gray-600">
               Fill out the form below or reach out to us through our contact channels.
             </p>
-            <div className="space-y-4 text-neutral-content">
+            {/* Fix: Changed text-primary-content to a more visile color */}
+            <div className="space-y-4 text-gray-600">
               <p><strong>General Inquiries:</strong> <a href="mailto:support@forumify.com" className="link link-hover">support@forumify.com</a></p>
               <p><strong>Partnerships:</strong> <a href="mailto:partnerships@forumify.com" className="link link-hover">partnerships@forumify.com</a></p>
               <p><strong>Report an Issue:</strong> <a href="mailto:report@forumify.com" className="link link-hover">report@forumify.com</a></p>
             </div>
-            
+
             <div className="mt-8">
-              <h3 className="text-xl font-semibold text-neutral">Connect With Us</h3>
+              <h3 className="text-xl font-semibold text-primary">Connect With Us</h3>
               <div className="flex mt-4 space-x-4 text-3xl">
                 <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 transition-colors duration-300 hover:text-blue-800">
                   <FaFacebook />

@@ -28,20 +28,20 @@ const Faq = () => {
     <div className="min-h-screen py-16 bg-base-200">
       <div className="container px-4 mx-auto md:px-8">
         <div className="mb-12 text-center">
-          <h1 className="text-4xl font-bold md:text-5xl text-neutral">Frequently Asked Questions</h1>
-          <p className="max-w-3xl mx-auto mt-4 text-lg text-neutral-content">
+          <h1 className="text-4xl font-bold md:text-5xl text-primary">Frequently Asked Questions</h1>
+          <p className="max-w-3xl mx-auto mt-4 text-lg text-secondary">
             Can't find the answer you're looking for? Feel free to contact us.
           </p>
         </div>
         
         <div className="max-w-4xl mx-auto space-y-4">
           {faqs.map((faq, index) => (
-            <div key={index} className="bg-white shadow-lg collapse collapse-plus rounded-xl">
+            <div key={index} className="shadow-lg bg-base-300 collapse collapse-plus rounded-xl">
               <input type="radio" name="my-accordion-3" id={`accordion-${index}`} defaultChecked={index === 0} />
-              <div className="text-xl font-medium collapse-title text-neutral">
+              <div className="text-xl font-medium collapse-title text-primary">
                 <label htmlFor={`accordion-${index}`}>{faq.question}</label>
               </div>
-              <div className="collapse-content text-neutral-content">
+              <div className="collapse-content">
                 <p>{faq.answer}</p>
               </div>
             </div>
