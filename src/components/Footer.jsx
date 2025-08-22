@@ -1,10 +1,11 @@
 import { Link } from "react-router"; 
-import { FaFacebook, FaTwitter, FaLinkedin } from 'react-icons/fa'; // Import icons
+import { FaFacebook, FaTwitter, FaLinkedin } from 'react-icons/fa'; 
 
 const Footer = () => {
   return (
     <footer className="border-t bg-base-100 text-base-content border-base-300">
-      <div className="container grid grid-cols-1 gap-6 px-4 py-10 mx-auto md:grid-cols-3">
+      
+      <div className="container grid grid-cols-1 gap-6 px-4 py-10 mx-auto md:grid-cols-4">
         {/* Branding */}
         <div>
           <Link
@@ -50,12 +51,34 @@ const Footer = () => {
           </ul>
         </div>
 
+        {/* New Column: Company Links */}
+        <div>
+          <h4 className="mb-2 font-semibold">Company</h4>
+          <ul className="space-y-1 text-sm">
+            <li>
+              <Link to="/about" className="hover:text-primary">
+                About Us
+              </Link>
+            </li>
+            <li>
+              <Link to="/faq" className="hover:text-primary">
+                FAQ
+              </Link>
+            </li>
+            <li>
+              <Link to="/contact-us" className="hover:text-primary">
+                Contact Us
+              </Link>
+            </li>
+          </ul>
+        </div>
+
         {/* Contact Info */}
         <div>
           <h4 className="mb-2 font-semibold">Contact</h4>
           <p className="text-sm">Email: support@forumify.com</p>
           <p className="text-sm">Phone: +880 1234-567890</p>
-          <div className="flex flex-wrap gap-3 mt-3 text-2xl"> {/* Increased gap and text size for icons */}
+          <div className="flex flex-wrap gap-3 mt-3 text-2xl">
             <a href="https://www.facebook.com" target="_blank" rel="noopener noreferrer" className="hover:text-primary">
               <FaFacebook />
             </a>
